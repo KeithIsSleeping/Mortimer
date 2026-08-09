@@ -1,0 +1,59 @@
+{
+  "_comment": "Human-verified ground truth for the Slayer Task Choice OCR pipeline. Each key is a fixture PNG in ./fixtures. 'n' is the number of task rows the reader must detect. 'options' are in top-to-bottom order; 'monster' is the canonical name from the app's RAW table, 'type' is the modifier badge type (xp|quantity|points|superior|clue|none), 'value' is the modifier number shown on the pill (multiple of 5; can be negative for quantity). Verified by eye from native in-game screenshots. Fixture 3 is intentionally omitted: it is a screenshot of the app itself (not a native task window), i.e. invalid input.",
+  "1.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Crawling hands", "type": "xp", "value": 50 },
+      { "monster": "Gargoyles", "type": "quantity", "value": 85 },
+      { "monster": "Bloodvelds", "type": "points", "value": 15 }
+    ]
+  },
+  "2.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Gargoyles", "type": "quantity", "value": 55 },
+      { "monster": "Araxytes", "type": "points", "value": 15 },
+      { "monster": "Rockslugs", "type": "xp", "value": 40 }
+    ]
+  },
+  "4.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Gryphons", "type": "superior", "value": 130 },
+      { "monster": "Araxytes", "type": "quantity", "value": 75 },
+      { "monster": "Bloodvelds", "type": "xp", "value": 10 }
+    ]
+  },
+  "5.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Turoth", "type": "clue", "value": 120 },
+      { "monster": "Jellies", "type": "xp", "value": 20 },
+      { "monster": "Smoke devils", "type": "superior", "value": 20 }
+    ]
+  },
+  "6.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Venators", "type": "clue", "value": 145 },
+      { "monster": "Hydras", "type": "superior", "value": 80 },
+      { "monster": "Gargoyles", "type": "clue", "value": 90 }
+    ]
+  },
+  "7.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Kurask", "type": "points", "value": 30 },
+      { "monster": "Aberrant spectres", "type": "points", "value": 20 },
+      { "monster": "Cave horrors", "type": "xp", "value": 35 }
+    ]
+  },
+  "8.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Dark beasts", "type": "points", "value": 20 },
+      { "monster": "Infernal mages", "type": "quantity", "value": -15 },
+      { "monster": "Pyrefiends", "type": "superior", "value": 90 }
+    ]
+  }
+}

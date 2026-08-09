@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mortimer Slayer — Task Choice Advisor</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    let stored=null; try{stored=localStorage.getItem("mortTheme");}catch(e){}
+    const theme = param || stored || "dark";
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root{color-scheme:light;--cp-bg:#d7c6a0;--cp-bg-elevated:#efe4c9;--cp-surface:#f0e6cc;--cp-surface-soft:#e6d8b4;--cp-border:#b09a6d;--cp-border-strong:#8a6f43;--cp-text:#2c2213;--cp-text-muted:#6b5836;--cp-text-soft:#5a4a2f;--cp-accent:#b3610f;--cp-accent-hover:#95500c;--cp-accent-soft:rgba(179,97,15,0.12);--cp-accent-fg:#fff3dd;--cp-success:#2f7d32;--cp-danger:#b23a20;--cp-warning:#9a6516;--cp-link:#0f7b73;--cp-shadow:0 14px 40px rgba(60,40,15,0.35);--cp-overlay:rgba(255,255,255,0.8);--cp-panel:rgba(255,255,255,0.86);--cp-panel-strong:rgba(255,255,255,0.96);--cp-sheen:rgba(255,255,255,0.55);--cp-highlight:rgba(179,97,15,0.14);--gold:#b3610f;--gold-2:#8a4d0c;--bone:#2c2213;--mort-purple:#6d34a0;--mort-teal:#0f766e;--bevel-l:rgba(255,255,255,0.55);--bevel-d:rgba(60,40,15,0.35);--frame:#7a5f38;}
+html[data-theme="dark"]{color-scheme:dark;--cp-bg:#14110c;--cp-bg-elevated:#1e1913;--cp-surface:#26201a;--cp-surface-soft:#1f1a13;--cp-border:#493a24;--cp-border-strong:#6e5734;--cp-text:#ece2cb;--cp-text-muted:#ac9c7c;--cp-text-soft:#8d7f63;--cp-accent:#ff9d2e;--cp-accent-hover:#ffb454;--cp-accent-soft:rgba(255,157,46,0.13);--cp-accent-fg:#1a1510;--cp-success:#8ac878;--cp-danger:#e5573f;--cp-warning:#ffcf5c;--cp-link:#57d0c6;--cp-shadow:0 18px 48px rgba(0,0,0,0.6);--cp-overlay:rgba(41,41,41,0.88);--cp-panel:rgba(41,41,41,0.72);--cp-panel-strong:rgba(41,41,41,0.96);--cp-sheen:rgba(255,255,255,0.04);--cp-highlight:rgba(255,157,46,0.12);--gold:#ff9d2e;--gold-2:#c9791b;--bone:#ece2cb;--mort-purple:#b981ec;--mort-teal:#4fd0c8;--bevel-l:rgba(255,220,150,0.10);--bevel-d:rgba(0,0,0,0.6);--frame:#5c4a30;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cp-bg);color:var(--cp-text);font-family:"Segoe UI",Aptos,Calibri,-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.5;padding:22px 16px 72px}
+.wrap{max-width:1120px;margin:0 auto}
+h1{font-size:1.55rem;margin:0 0 2px}
+h2{font-size:1.02rem;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.sub{color:var(--cp-text-muted);font-size:0.9rem;margin:0 0 18px}
+.mono{font-family:Consolas,"Courier New",Courier,monospace}
+.card{background:var(--cp-surface);border:1px solid var(--cp-border);border-radius:16px;padding:18px;box-shadow:0 0 2px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.14);margin-bottom:16px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+label{display:block;font-size:0.76rem;color:var(--cp-text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.03em}
+select,input[type=number],input[type=text]{width:100%;padding:8px 10px;border-radius:0.625rem;border:1px solid var(--cp-border-strong);background:var(--cp-bg-elevated);color:var(--cp-text);font-size:0.94rem;font-family:inherit}
+input[type=number]{font-family:Consolas,monospace}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 16px}
+.checks label,.inline{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:0.9rem;color:var(--cp-text);margin:0}
+.checks input,.inline input{width:auto}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.opt{background:var(--cp-surface-soft);border:1px solid var(--cp-border);border-radius:14px;padding:14px}
+.opt .r{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.opt .full{grid-column:1/-1}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:0.625rem;border:1px solid var(--cp-accent);background:var(--cp-accent);color:var(--cp-accent-fg);font-size:0.92rem;font-weight:600;cursor:pointer;font-family:inherit}
+.btn.ghost{background:transparent;color:var(--cp-accent)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.badge{display:inline-block;font-size:0.7rem;padding:2px 8px;border-radius:999px;margin-left:4px;vertical-align:middle}
+.badge.single{background:rgba(245,158,11,0.16);color:var(--cp-warning);border:1px solid var(--cp-warning)}
+.badge.multi{background:var(--cp-accent-soft);color:var(--cp-accent);border:1px solid var(--cp-border-strong)}
+.badge.win{background:var(--cp-accent);color:var(--cp-accent-fg)}
+.verdict{background:var(--cp-accent-soft);border:1px solid var(--cp-accent);border-radius:16px;padding:18px 20px;margin-bottom:16px}
+.verdict h2{color:var(--cp-accent)}
+.verdict .pick{font-size:1.3rem;font-weight:800;margin-bottom:6px}
+.verdict p{margin:6px 0;font-size:0.94rem}
+.chip{font-size:0.72rem;padding:2px 9px;border:1px solid var(--cp-border-strong);border-radius:999px;color:var(--cp-text-muted)}
+.rec.slaughter{color:var(--cp-danger);font-weight:700}
+.rec.expeditious{color:var(--cp-link);font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:0.85rem}
+th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--cp-border)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--cp-text-muted);font-weight:600;text-transform:uppercase;font-size:0.7rem;letter-spacing:0.03em}
+tr.best td{background:var(--cp-highlight)}
+.hint{font-size:0.8rem;color:var(--cp-text-soft);margin-top:6px}
+details summary{cursor:pointer;font-weight:600;color:var(--cp-accent);margin-bottom:8px}
+.dropzone{border:2px dashed var(--cp-border-strong);border-radius:14px;padding:20px;text-align:center;color:var(--cp-text-muted);cursor:pointer;background:var(--cp-bg-elevated)}
+.dropzone.drag{border-color:var(--cp-accent);background:var(--cp-accent-soft)}
+.status{font-size:0.85rem;margin-top:8px;min-height:1.2em}
+.status.ok{color:var(--cp-success)}.status.err{color:var(--cp-danger)}.status.work{color:var(--cp-warning)}
+.bench{display:flex;gap:20px;flex-wrap:wrap;align-items:baseline}
+.bench .n{font-size:1.4rem;font-weight:800;color:var(--cp-accent)}
+.seg{display:inline-flex;border:1px solid var(--cp-border-strong);border-radius:0.625rem;overflow:hidden}
+.seg button{border:0;background:var(--cp-bg-elevated);color:var(--cp-text);padding:6px 14px;cursor:pointer;font-family:inherit;font-size:0.9rem}
+.seg button.on{background:var(--cp-accent);color:var(--cp-accent-fg)}
+img#preview{max-width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--cp-border);display:none}
+.small{font-size:0.8rem;color:var(--cp-text-muted)}
+
+/* ============ OSRS / Mortimer theme ============ */
+body{background:radial-gradient(1100px 460px at 50% -6%, rgba(255,170,60,0.06), transparent 60%),radial-gradient(880px 480px at 50% 108%, rgba(123,63,176,0.10), transparent 55%),linear-gradient(180deg, var(--cp-bg-elevated), var(--cp-bg) 44%);background-attachment:fixed;min-height:100vh}
+a{color:var(--cp-link)}
+.hero{display:flex;gap:16px;align-items:flex-start;margin-bottom:18px;padding:16px 20px;border-radius:14px;position:relative;overflow:hidden;background:linear-gradient(180deg, rgba(255,255,255,0.05), transparent 45%), var(--cp-surface);border:1px solid var(--frame);box-shadow:inset 0 1px 0 var(--bevel-l), inset 0 0 0 2px rgba(0,0,0,0.14), var(--cp-shadow)}
+.hero .crest{flex:0 0 auto;width:58px;height:58px;display:grid;place-items:center;border-radius:12px;background:radial-gradient(circle at 50% 32%, #2b2418, #14100b);border:1px solid var(--frame);box-shadow:inset 0 1px 0 var(--bevel-l), 0 2px 6px rgba(0,0,0,0.5)}
+.hero .crest svg{width:38px;height:38px}
+.hero .htxt{flex:1 1 auto;min-width:0}
+.hero h1{font-size:1.5rem;margin:0;letter-spacing:0.4px;color:var(--gold);text-shadow:0 1px 0 rgba(0,0,0,0.55), 0 0 16px rgba(255,157,46,0.22);font-weight:800;line-height:1.12}
+.hero h1 .tag{display:block;font-size:0.64rem;letter-spacing:3px;text-transform:uppercase;color:var(--cp-text-muted);text-shadow:none;font-weight:700;margin-top:3px}
+.hero .sub{margin:8px 0 0}
+.themeToggle{flex:0 0 auto;width:36px;height:36px;border-radius:8px;border:1px solid var(--cp-border-strong);background:var(--cp-bg-elevated);color:var(--cp-text);cursor:pointer;font-size:1rem;line-height:1;box-shadow:inset 0 1px 0 var(--bevel-l)}
+.themeToggle:hover{border-color:var(--gold)}
+.sub{color:var(--cp-text-muted);font-size:0.9rem;max-width:74ch}
+
+.card,.sect{background:linear-gradient(180deg, rgba(255,255,255,0.035), transparent 42%), var(--cp-surface);border:1px solid var(--cp-border);border-radius:12px;box-shadow:inset 0 1px 0 var(--bevel-l), 0 2px 10px rgba(0,0,0,0.32)}
+.card{padding:16px 18px;margin-bottom:14px}
+details.sect{padding:0;margin-bottom:14px}
+details.sect>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 18px;user-select:none;border-radius:12px}
+details.sect>summary::-webkit-details-marker{display:none}
+details.sect>summary::before{content:"";flex:0 0 auto;width:8px;height:8px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);transform:rotate(-45deg);transition:transform .18s ease;opacity:.9}
+details.sect[open]>summary::before{transform:rotate(45deg)}
+details.sect[open]>summary{border-bottom:1px solid var(--cp-border);border-radius:12px 12px 0 0}
+.sect>summary h2{margin:0}
+.sect .body{padding:16px 18px 18px}
+.sumline{font-size:0.8rem;color:var(--cp-text-muted);font-weight:500;margin-left:auto;text-align:right}
+details.sect[open] .sumline{display:none}
+
+h2{font-size:0.95rem;margin:0 0 12px;display:flex;align-items:center;gap:9px;color:var(--gold);text-transform:uppercase;letter-spacing:1.1px;font-weight:800;text-shadow:0 1px 0 rgba(0,0,0,0.45)}
+h2 .step{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;font-size:0.8rem;background:linear-gradient(180deg,var(--cp-accent),var(--gold-2));color:var(--cp-accent-fg);box-shadow:inset 0 1px 0 var(--bevel-l);flex:0 0 auto}
+label{font-size:0.72rem;font-weight:600}
+select,input[type=number],input[type=text]{border-radius:8px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.3)}
+select:focus,input:focus{outline:none;border-color:var(--gold);box-shadow:inset 0 1px 2px rgba(0,0,0,0.3),0 0 0 2px var(--cp-accent-soft)}
+.checks{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px 14px}
+.checks label{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--cp-border);border-radius:8px;background:var(--cp-surface-soft);cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;color:var(--cp-text);margin:0}
+.checks label:hover{border-color:var(--gold-2)}
+.checks input{accent-color:var(--cp-accent)}
+.opt{background:linear-gradient(180deg, rgba(255,255,255,0.03), transparent 50%), var(--cp-surface-soft);border:1px solid var(--cp-border);border-radius:10px;box-shadow:inset 0 1px 0 var(--bevel-l)}
+.opt>label{color:var(--gold);font-weight:800;letter-spacing:0.05em;font-size:0.74rem}
+.btn{border-radius:8px;border:1px solid var(--gold-2);background:linear-gradient(180deg,var(--cp-accent),var(--gold-2));color:var(--cp-accent-fg);font-weight:700;box-shadow:inset 0 1px 0 var(--bevel-l),0 1px 3px rgba(0,0,0,0.4)}
+.btn.ghost{background:transparent;color:var(--cp-accent);box-shadow:none}
+.badge{border-radius:6px;font-weight:700}
+.badge.win{background:linear-gradient(180deg,var(--cp-accent),var(--gold-2));color:var(--cp-accent-fg);border:1px solid var(--gold-2)}
+.verdict{position:relative;overflow:hidden;background:linear-gradient(180deg, rgba(150,100,220,0.12), transparent 46%), var(--cp-surface);border:1px solid var(--mort-purple);border-radius:14px;box-shadow:inset 0 1px 0 var(--bevel-l), 0 0 22px rgba(123,63,176,0.16)}
+.verdict::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--mort-teal),var(--mort-purple))}
+.verdict h2{color:var(--gold)}
+.verdict .pick{font-size:1.35rem;font-weight:800;color:var(--bone)}
+th{font-weight:700;text-transform:uppercase;font-size:0.68rem;letter-spacing:0.05em}
+tr.best td{background:var(--cp-highlight)}
+.card>details>summary{cursor:pointer;font-weight:700;color:var(--gold);list-style:none;display:flex;align-items:center;gap:8px}
+.card>details>summary::-webkit-details-marker{display:none}
+.card>details>summary::before{content:"";width:8px;height:8px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);transform:rotate(-45deg);transition:transform .18s}
+.card>details[open]>summary::before{transform:rotate(45deg)}
+.card>details[open]>summary{margin-bottom:10px}
+.dropzone{border:2px dashed var(--cp-border-strong);border-radius:10px;background:var(--cp-bg-elevated)}
+.dropzone.drag{border-color:var(--gold);background:var(--cp-accent-soft);color:var(--cp-text)}
+.bench .n{color:var(--gold);font-family:Consolas,monospace}
+.seg{border-radius:8px}
+.seg button.on{background:linear-gradient(180deg,var(--cp-accent),var(--gold-2));color:var(--cp-accent-fg);font-weight:700}
+.caperepeat{margin:10px 0 0;padding:9px 12px;border-radius:8px;font-size:0.9rem;border:1px solid var(--cp-border);background:var(--cp-surface-soft)}
+.caperepeat.yes{border-color:var(--mort-teal);box-shadow:inset 0 0 0 1px rgba(79,208,200,0.15)}
+.caperepeat.no{border-color:var(--cp-border-strong);opacity:0.92}
+.refbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;padding:8px 10px;border:1px solid var(--cp-border);border-radius:8px;background:var(--cp-surface-soft)}
+.refbtns{margin-left:auto;display:flex;gap:8px}
+.refbtns .btn{padding:5px 12px;font-size:0.82rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="crest" aria-hidden="true">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="15" y1="55" x2="49" y2="11" stroke="#8a6f43" stroke-width="3" stroke-linecap="round"/>
+        <path d="M49 11 l7 -5 -2 8 -5 -3z" fill="#4fd0c8"/>
+        <path d="M32 12c-10 0-17 7-17 16 0 6 3 10 6 13v5c0 2 2 4 4 4h14c2 0 4-2 4-4v-5c3-3 6-7 6-13 0-9-7-16-17-16z" fill="#ece2cb" stroke="#c9791b" stroke-width="1.6"/>
+        <circle cx="25" cy="29" r="4.3" fill="#14100b"/>
+        <circle cx="39" cy="29" r="4.3" fill="#14100b"/>
+        <path d="M32 34 l-2.6 5 h5.2z" fill="#14100b"/>
+        <path d="M26 45 h12 M29 45 v5 M32 45 v5 M35 45 v5" stroke="#14100b" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="htxt">
+      <h1>Mortimer<span class="tag">Slayer Task Choice Advisor</span></h1>
+      <p class="sub">Set your profile and goal, upload a screenshot of the task-choice interface (or enter it manually), and get a recommended pick, the right bracelet, and whether rerolling would serve you better.</p>
+    </div>
+    <button class="themeToggle" id="themeBtn" title="Toggle cave / parchment">🌙</button>
+  </header>
+
+  <!-- PROFILE -->
+  <details class="card sect" id="secProfile">
+    <summary><h2><span class="step">1</span> Your profile</h2><span class="sumline" id="sumProfile"></span></summary>
+    <div class="body">
+    <div class="checks" id="profileChecks">
+      <label><input type="checkbox" id="eliteCA" checked> Elite Combat Achievements (1/150 superior)</label>
+      <label><input type="checkbox" id="wilderness"> Doing tasks in Wilderness (+10% superior)</label>
+      <label><input type="checkbox" id="ownSlaughter" checked> Own Bracelet of Slaughter</label>
+      <label><input type="checkbox" id="ownExped" checked> Own Expeditious bracelet</label>
+      <label><input type="checkbox" id="partner"> Partner Slayer (≈2× kill speed)</label>
+      <label><input type="checkbox" id="cannon" checked> Using cannon / burst / barrage on AoE tasks</label>
+      <label><input type="checkbox" id="capeWorn"> Using Slayer cape (99 Slayer · 10% task retain)</label>
+    </div>
+    <div class="grid g3" style="margin-top:12px">
+      <div>
+        <label>Slayer level</label>
+        <input type="number" id="slayerLvl" value="99" min="1" max="99">
+        <div class="hint" id="availNote"></div>
+      </div>
+      <div>
+        <label>Mortimer tasks completed</label>
+        <input type="number" id="mortTasks" value="80" min="0" max="1000">
+        <div class="hint" id="unlockNote"></div>
+      </div>
+      <div>
+        <label>Overhead per task (min)</label>
+        <input type="number" id="overhead" value="2" min="0" step="0.5">
+        <div class="hint">Bank, travel, get assignment</div>
+      </div>
+      <div>
+        <label>Superior spawn (derived)</label>
+        <div class="bench"><span class="n" id="spawnShow">1/150</span></div>
+        <div class="hint">From Elite CA + Wilderness</div>
+      </div>
+    </div>
+    </div>
+  </details>
+
+  <!-- GOAL -->
+  <details class="card sect" id="secGoal" open>
+    <summary><h2><span class="step">2</span> Your goal</h2><span class="sumline" id="sumGoal"></span></summary>
+    <div class="body">
+    <div class="grid g3">
+      <div>
+        <label>What are you optimising for?</label>
+        <select id="goal">
+          <option value="unique">Superior uniques (imbued heart / gem)</option>
+          <option value="xp">Slayer XP per hour</option>
+          <option value="points">Slayer points per hour</option>
+          <option value="specific">Hunting a specific monster</option>
+        </select>
+      </div>
+      <div id="targetWrap" style="display:none">
+        <label>Target monster</label>
+        <select id="target"></select>
+      </div>
+      <div>
+        <label>Your average grind rate</label>
+        <div class="bench"><span class="n" id="benchShow">–</span><span class="chip" id="benchRate"></span></div>
+        <div class="hint">The bar every option is judged against</div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <label>Block slots (Mortimer has 2) — <a href="#" id="suggestBlocks" style="color:var(--cp-link)">reset to recommended</a></label>
+      <div class="grid g2">
+        <select id="block1"></select>
+        <select id="block2"></select>
+      </div>
+      <div class="hint" id="blockNote"></div>
+    </div>
+    </div>
+  </details>
+
+  <!-- TASK INPUT -->
+  <details class="card sect" id="secTasks" open>
+    <summary><h2><span class="step">3</span> Mortimer's offer</h2><span class="sumline">screenshot or manual entry</span></summary>
+    <div class="body">
+    <div class="grid g2">
+      <div>
+        <div class="dropzone" id="dropzone">
+          <b>Upload / paste a screenshot</b><br><span class="small">of the Slayer Task Choice window — I'll identify monsters by their <b>icon</b> (pre-seeded from the wiki) and read amounts &amp; modifiers</span>
+          <input type="file" id="fileInput" accept="image/*" style="display:none">
+        </div>
+        <div class="status" id="ocrStatus"></div>
+        <img id="preview" alt="screenshot preview">
+      </div>
+      <div>
+        <div class="inline" style="justify-content:space-between;margin-bottom:10px">
+          <span class="small">Mortimer offers</span>
+          <span class="small" id="nInfo"><b>3</b> choices</span>
+        </div>
+        <div class="hint">The number of choices is set by your <b>screenshot</b> (I count the tasks), or by your <b>Mortimer task count</b> when entering manually — 50+ completed tasks unlocks a 3rd choice. Values auto-fill from the screenshot; verify &amp; edit them below. The <b>modifier</b> is the pill shown on each task.</div>
+      </div>
+    </div>
+    <div class="opts" id="optionInputs" style="margin-top:14px"></div>
+    </div>
+  </details>
+
+  <!-- OUTPUT -->
+  <div class="verdict" id="verdict"></div>
+  <div class="card"><details><summary>All options, scored</summary><div id="scoreTable"></div></details></div>
+  <div class="card"><details><summary>Per-monster KPH tuning &amp; reference (edit to match your account)</summary><div id="refTable"></div></details></div>
+  <p class="hint">Heart/superior = 1/(8·(200−⌊(req+55)²/125⌋)). Rates are per hour and independent of task size; task size only sets length. Recommendation maximises long-run value: extend (Slaughter) tasks above your average, rush (Expeditious) the least-bad task to reroll when all are below it. KPH defaults are estimates — tune them.</p>
+</div>
+
+<script>
+// ============ DATA ============
+// name, req, aMin, aMax, sMin(mod%), sMax, kph, single, weight, slayxp(normal), supxp(superior)
+const RAW = [
+["Crawling hands",5,35,50,50,100,550,0,10,12,550],
+["Cave crawlers",10,35,50,50,100,600,0,10,22,600],
+["Banshees",15,35,50,50,100,700,0,10,22,610],
+["Rockslugs",20,35,50,50,100,480,0,10,24,770],
+["Cockatrice",25,35,50,50,100,520,0,10,37,950],
+["Pyrefiends",30,35,50,50,100,480,0,10,45,1250],
+["Basilisks",40,40,60,200,300,300,0,10,75,1700],
+["Infernal mages",45,35,50,50,100,520,0,10,60,1750],
+["Bloodvelds",50,120,180,100,150,480,0,8,120,2900],
+["Gryphons",51,80,120,100,150,200,1,10,110,2800],
+["Jellies",52,80,120,100,150,420,0,10,75,1900],
+["Custodian stalkers",54,80,120,100,150,320,0,8,250,3382],
+["Turoth",55,80,120,200,300,300,0,10,76,1998],
+["Warped creatures",56,80,120,200,300,300,0,10,200,3200],
+["Cave horrors",58,80,120,200,300,260,0,10,55,1300],
+["Aberrant spectres",60,80,120,200,300,350,0,10,90,2500],
+["Wyrms",62,80,120,200,300,300,0,10,123,3120],
+["Dust devils",65,120,180,100,150,450,0,8,105,3000],
+["Kurask",70,40,60,200,300,260,0,10,97,2767],
+["Venators",74,120,180,75,150,90,1,10,405,3622.5],
+["Gargoyles",75,120,180,200,300,230,1,10,105,3044],
+["Aquanites",78,40,60,200,300,200,1,10,180,4200],
+["Nechryael",80,150,200,70,120,400,0,8,105,3280],
+["Drakes",84,40,60,75,150,65,1,10,230.6,7245],
+["Abyssal demons",85,120,180,30,60,420,0,8,150,4200],
+["Dark beasts",90,40,60,200,300,220,0,10,225.4,6462],
+["Araxytes",92,120,180,10,25,320,0,8,260,4658],
+["Smoke devils",93,80,120,10,25,480,0,8,185,2400],
+["Hydras",95,150,200,75,150,80,1,10,322.5,8625],
+];
+const MON = RAW.map(r=>({name:r[0],req:r[1],aMin:r[2],aMax:r[3],sMin:r[4],sMax:r[5],kph:r[6],single:!!r[7],w:r[8],slayxp:r[9],supxp:r[10]}));
+const byName={}; MON.forEach(m=>byName[m.name]=m);
+// ============ METHOD DATA (grounded in OSRS Wiki strategy pages) ============
+// The Wiki publishes Slayer-XP/kill and cannonable/multicombat flags (authoritative) but NOT
+// per-monster XP/hr. So KPH here is a METHOD-TAGGED ESTIMATE (edit any value to your own rate):
+//   base = standard rate for that task's method; aoe = rate when using cannon/burst/barrage.
+// Only tasks the Wiki marks as genuinely AoE-able get an aoe rate. Dark beasts, gargoyles,
+// aquanites, araxytes etc. are single-target melee — a cannon does NOT speed them up
+// (Dark beast page: "while they can be hit with a cannon, it is not recommended").
+const METH={
+  "Pyrefiends":{aoe:700,m:"Burst (Catacombs)"},
+  "Infernal mages":{aoe:650,m:"Burst"},
+  "Bloodvelds":{aoe:600,m:"Burst (Catacombs, Greater)",base:350},
+  "Jellies":{aoe:600,m:"Burst (Catacombs)",base:400},
+  "Aberrant spectres":{aoe:450,m:"Barrage (Catacombs)",base:300},
+  "Dust devils":{aoe:550,m:"Burst/Barrage (Smoke dungeon)",base:300},
+  "Kurask":{m:"Leaf-bladed / broad / Magic dart — weapon-locked, cannon-immune",base:150},
+  "Cave horrors":{aoe:350,m:"Cannon / Melee (Mos Le'Harmless)"},
+  "Nechryael":{aoe:520,m:"Burst/Barrage (Catacombs, Greater)",base:300},
+  "Abyssal demons":{aoe:400,m:"Barrage (Catacombs)",base:300},
+  "Smoke devils":{aoe:280,m:"Barrage + Cannon",base:180},
+  "Dark beasts":{m:"Melee — single-target, slow",base:130},
+  "Gargoyles":{m:"Melee (rock hammer)"},
+  "Aquanites":{m:"Melee — single-target"},
+  "Araxytes":{m:"Melee — single-target"},
+  "Warped creatures":{m:"Melee"},
+  "Wyrms":{m:"Melee (Karuulm)"},
+  "Turoth":{m:"Leaf-bladed / broad / Magic dart — weapon-locked, cannon-immune",base:260},
+  "Basilisks":{m:"Melee (mirror shield)"},
+  "Custodian stalkers":{m:"Melee"},
+};
+MON.forEach(m=>{
+  const d=METH[m.name]||{};
+  if(d.base!=null) m.kph=d.base;
+  m.cannonable = (typeof d.aoe==="number");
+  m.aoeKph = m.cannonable ? d.aoe : m.kph;
+  m.method = d.m || (m.single ? "Melee — single-way" : "Melee");
+});
+// Your per-monster KPH calibration — persisted on this device (localStorage). You are the
+// authoritative source for your own setup; no clean per-monster crowdsourced KPH exists publicly
+// (TempleOSRS covers bosses + aggregate skilling only), so dial in your real rates and they stick.
+const kphOverride=(()=>{ try{ return JSON.parse(localStorage.getItem("mortKph")||"{}"); }catch(e){ return {}; } })();
+function saveKph(){ try{ localStorage.setItem("mortKph", JSON.stringify(kphOverride)); }catch(e){} }
+const SLAUGHTER=4/3, EXPED=0.8;
+// Effective kill-count multipliers given which bracelets the player actually owns.
+// No Slaughter -> can't extend good tasks (1x). No Expeditious -> can't rush bad tasks (1x).
+const extendFactor=()=>P.ownSlaughter?SLAUGHTER:1;
+const rushFactor=()=>P.ownExped?EXPED:1;
+
+// ============ CORE MATH ============
+const Dval=req=>200-Math.floor(((req+55)**2)/125);
+const heartPerSup=req=>1/(8*Dval(req));
+// KPH: your manual override if set; else the AoE rate when cannon/burst/barrage is on AND the
+// task supports it; else the task's base (standard-method) rate.
+function baseKph(m){ if(kphOverride[m.name]!=null) return kphOverride[m.name]; return (P.cannon && m.cannonable) ? m.aoeKph : m.kph; }
+const kphOf=m=>{ let k=baseKph(m); if(P.partner)k*=2; return k; };
+
+function spawn(){
+  if(P.elite && P.wild) return 135;
+  if(P.elite) return 150;
+  if(P.wild) return 180;
+  return 200;
+}
+// per-hour rates (size-independent)
+function heartRate(m,supPct){ return kphOf(m)*(1/spawn())*heartPerSup(m.req)*(1+supPct/100); }
+function xpRate(m,xpPct){ const k=kphOf(m); return (k*m.slayxp + k*(1/spawn())*m.supxp)*(1+xpPct/100); }
+// Mortimer gives NO base points — points come only from the Slayer-point modifier (5-40,
+// task-dependent, in 5s). Actual option values are read from the screenshot; this estimate
+// (scaled by Slayer requirement per the wiki's "lower level = fewer points") is used only
+// for the benchmark bar and the reference column.
+const pointsEst=req=>Math.max(5,Math.min(40,Math.round((5+35*(req-5)/90)/5)*5));
+// points/hr if a monster rolled an average points modifier (always rushed with Expeditious)
+function pointsHrEst(m){ const amt=(m.aMin+m.aMax)/2, total=(amt*rushFactor())/kphOf(m)+P.overhead; return total>0?pointsEst(m.req)/total:0; }
+
+// Which modifier types are unlocked by Mortimer task count
+function unlocked(){
+  const t=P.tasks; const u=["points","quantity"];
+  if(t>=15)u.push("clue"); if(t>=25)u.push("superior"); if(t>=40)u.push("xp"); return u;
+}
+// How many tasks Mortimer offers: read from the screenshot when one is loaded,
+// otherwise derived from the player's Mortimer task count (50+ unlocks a 3rd choice).
+let detectedN=null;
+function nChoices(){ return detectedN!=null ? detectedN : (P.tasks>=50 ? 3 : 2); }
+
+// goal rate for an option given its entered modifier
+function optRate(goal,m,mod){
+  if(goal==="unique") return heartRate(m, mod.type==="superior"?mod.val:0);
+  if(goal==="xp") return xpRate(m, mod.type==="xp"?mod.val:0);
+  if(goal==="points"){ const pts=mod.type==="points"?mod.val:0; if(pts<=0)return 0; const amt=(m.aMin+m.aMax)/2, total=(amt*rushFactor())/kphOf(m)+P.overhead; return total>0?pts/total:0; }
+  return 0; // specific handled separately
+}
+// evaluate one option -> {rate, bracelet, kills, killTime, total, expected, value}
+function evalOption(goal,m,amount,mod,H){
+  if(goal==="points"){
+    // Points are paid once per completion -> always rush (Expeditious); extending never helps.
+    const pts = mod.type==="points" ? mod.val : 0;
+    const qty = Math.max(1, amount + (mod.type==="quantity"?mod.val:0));
+    const kills = qty*rushFactor();
+    const killTime = kills/kphOf(m);
+    const total = killTime + P.overhead;
+    const rate = total>0 ? pts/total : 0;                 // points per hour
+    return {rate, bracelet:"Expeditious", kills, killTime, total, expected:pts, value: pts - H*total};
+  }
+  const rate=optRate(goal,m,mod);
+  const qty = amount + (mod.type==="quantity"?mod.val:0);
+  const slope = rate - H; // per-hour comparison (rate independent of size)
+  const bracelet = slope>0 ? "Slaughter" : "Expeditious";
+  const factor = slope>0 ? extendFactor() : rushFactor();
+  const kills = qty*factor;
+  const killTime = kills/kphOf(m);
+  const total = killTime + P.overhead;
+  const expected = rate*killTime; // hearts or xp produced this task
+  const value = expected - H*total;
+  return {rate,bracelet,kills,killTime,total,expected,value};
+}
+
+// ============ BENCHMARK (deterministic best-of-N) ============
+function benchmark(goal){
+  const pool=MON.filter(m=>!P.blocks.includes(m.name) && m.req<=P.slayer);
+  const N=nChoices();
+  if(pool.length<N) return {H:0};
+  if(goal==="specific"){
+    // expected assignments until target appears among N distinct draws
+    const tgt=byName[P.target]; if(!tgt||P.blocks.includes(P.target)||tgt.req>P.slayer) return {H:0,pTarget:0,tooHigh:!!(tgt&&tgt.req>P.slayer)};
+    const totW=pool.reduce((s,m)=>s+m.w,0);
+    // P(target in N distinct draws) ~ 1-(1-w/tot)^N (approx w/ replacement)
+    const p=1-Math.pow(1-tgt.w/totW,N);
+    return {H:0,pTarget:p,expAssign:1/p};
+  }
+  const U=unlocked();
+  const benefType = goal==="unique"?"superior": goal==="points"?"points":"xp";
+  const benefVal = m => goal==="points"? pointsEst(m.req) : (m.sMin+m.sMax)/2;
+  const hasBenef = U.includes(benefType);
+  const pBenef = hasBenef ? 1/U.length : 0;
+  const pQty = 1/U.length;
+  const totW=pool.reduce((s,m)=>s+m.w,0);
+  let H = goal==="unique"?0.012: goal==="points"?60 : 8000;
+  for(let it=0;it<28;it++){
+    const atoms=[];
+    for(const m of pool){
+      const pm=m.w/totW, mid=(m.aMin+m.aMax)/2, sMid=(m.sMin+m.sMax)/2;
+      const scen=[
+        [pBenef, mid, {type:benefType,val:benefVal(m)}],
+        [pQty,   mid+65, {type:"quantity",val:65}],
+        [1-pBenef-pQty, mid, {type:"none",val:0}],
+      ];
+      for(const [ps,amt,mod] of scen){ if(ps<=0)continue; const e=evalOption(goal,m,amt,mod,H); atoms.push({p:pm*ps,exp:e.expected,tot:e.total,val:e.value}); }
+    }
+    atoms.sort((a,b)=>a.val-b.val);
+    let cum=0,EH=0,ET=0;
+    for(const a of atoms){ const below=cum,above=cum+a.p; const pmax=Math.pow(above,N)-Math.pow(below,N); EH+=pmax*a.exp; ET+=pmax*a.tot; cum=above; }
+    H=EH/ET;
+  }
+  const Hbase=H;
+  // Slayer cape: 10% of assignments you may REPEAT your last task instead of a fresh best-of-N.
+  // Optimal play = repeat only tasks at/above the bar (H). Steady-state renewal mixture over the
+  // same order-stat atoms. Effect on the AVERAGE is small (~2% at 10%) — verified vs Monte Carlo.
+  if(P.cape){
+    const atoms=[];
+    for(const m of pool){ const pm=m.w/totW, mid=(m.aMin+m.aMax)/2;
+      const scen=[[pBenef,mid,{type:benefType,val:benefVal(m)}],[pQty,mid+65,{type:"quantity",val:65}],[1-pBenef-pQty,mid,{type:"none",val:0}]];
+      for(const [ps,amt,mod] of scen){ if(ps<=0)continue; const e=evalOption(goal,m,amt,mod,Hbase); atoms.push({p:pm*ps,exp:e.expected,tot:e.total,val:e.value,rate:optRate(goal,m,mod)}); } }
+    atoms.sort((a,b)=>a.val-b.val);
+    let cum=0,EHall=0,ETall=0,EHg=0,ETg=0,Pg=0;
+    for(const a of atoms){ const below=cum,above=cum+a.p, pmax=Math.pow(above,N)-Math.pow(below,N); EHall+=pmax*a.exp; ETall+=pmax*a.tot; if(a.rate>=Hbase){EHg+=pmax*a.exp; ETg+=pmax*a.tot; Pg+=pmax;} cum=above; }
+    if(Pg>1e-6){ const pRep=0.10, phi=1/(1+pRep*Pg/(1-pRep)); const EHc=phi*EHall+(1-phi)*(EHg/Pg), ETc=phi*ETall+(1-phi)*(ETg/Pg); if(ETc>0) H=EHc/ETc; }
+  }
+  // prob a fresh assignment's BEST option beats a given rate threshold
+  return {H, Hbase, cape:P.cape, capeBoost: Hbase>0?(H/Hbase-1):0, atomThreshold:(thr)=>{ // returns P(next best-of-N rate > thr)
+      let cum=0; const atoms=[];
+      for(const m of pool){ const pm=m.w/totW,mid=(m.aMin+m.aMax)/2,sMid=(m.sMin+m.sMax)/2;
+        const scen=[[pBenef,{type:benefType,val:benefVal(m)}],[pQty,{type:"quantity",val:0}],[1-pBenef-pQty,{type:"none",val:0}]];
+        for(const [ps,mod] of scen){ if(ps<=0)continue; atoms.push({p:pm*ps,rate:optRate(goal,m,mod)}); } }
+      const belowP=atoms.filter(a=>a.rate<=thr).reduce((s,a)=>s+a.p,0);
+      return 1-Math.pow(belowP,N);
+  }};
+}
+
+// ============ PROFILE STATE ============
+const P={elite:true,wild:false,partner:false,cannon:true,cape:false,ownSlaughter:true,ownExped:true,tasks:80,slayer:99,overhead:2/60,goal:"unique",target:"Hydras",blocks:["Venators","Hydras"],n:3};
+
+function readProfile(){
+  P.elite=el("eliteCA").checked; P.wild=el("wilderness").checked; P.partner=el("partner").checked;
+  P.cannon=el("cannon").checked;
+  P.ownSlaughter=el("ownSlaughter").checked; P.ownExped=el("ownExped").checked;
+  P.tasks=+el("mortTasks").value||0; P.overhead=(+el("overhead").value||0)/60;
+  P.cape=el("capeWorn").checked;
+  const lvlIn=el("slayerLvl");
+  if(P.cape){ lvlIn.value=99; lvlIn.disabled=true; } else { lvlIn.disabled=false; }
+  P.slayer=Math.max(1,Math.min(99,+lvlIn.value||99));
+  P.goal=el("goal").value; P.target=el("target").value;
+  P.blocks=[el("block1").value,el("block2").value].filter(b=>b!=="None");
+  el("spawnShow").textContent="1/"+spawn();
+  const u=unlocked();
+  el("unlockNote").textContent=`Unlocked: ${u.join(", ")}${P.tasks>=50?" · 3 choices":" · 2 choices"}`;
+  el("availNote").textContent=`${MON.filter(m=>m.req<=P.slayer).length}/${MON.length} tasks available`;
+  P.n=nChoices();
+  const nSrc = detectedN!=null ? "read from screenshot" : (P.tasks>=50 ? "50+ Mortimer tasks" : "under 50 tasks");
+  el("nInfo").innerHTML=`<b>${P.n}</b> choice${P.n===1?"":"s"} · <span class="small" style="opacity:.75">${nSrc}</span>`;
+}
+
+// live section summaries (shown when a section is collapsed)
+function updateSummaries(){
+  const bits=[];
+  bits.push("Slayer "+(el("slayerLvl").value||99));
+  bits.push(el("eliteCA").checked?"Elite CA":"no Elite CA");
+  const br=[]; if(el("ownSlaughter").checked)br.push("Slaughter"); if(el("ownExped").checked)br.push("Expeditious");
+  bits.push(br.length?br.join(" + "):"no bracelets");
+  if(el("wilderness").checked)bits.push("Wilderness");
+  if(el("partner").checked)bits.push("Partner");
+  if(el("cannon").checked)bits.push("Cannon");
+  if(el("capeWorn").checked)bits.push("Slayer cape");
+  bits.push("spawn "+el("spawnShow").textContent);
+  const sp=el("sumProfile"); if(sp)sp.textContent=bits.join(" · ");
+  const gsel=el("goal"); let gs=gsel.options[gsel.selectedIndex].text;
+  if(gsel.value==="specific"){ gs="Hunting "+el("target").value; }
+  else { gs+=" · blocks: "+el("block1").value+", "+el("block2").value; }
+  const sg=el("sumGoal"); if(sg)sg.textContent=gs;
+}
+
+// ============ SUGGESTED BLOCKS (goal-aware, principled) ============
+// Blocks that most RAISE your grind rate = the tasks whose removal from the best-of-N pool
+// helps most. Found greedily via the benchmark; near-ties broken toward the LONGEST worst-case
+// task (the slow single-way slogs that most impede superior spawn throughput, e.g. Venators/Hydras).
+function suggestBlocks(){
+  const goal=P.goal;
+  const worstT=m=>m.aMax/kphOf(m);           // longest a forced task could run (worst-case slog)
+  const pool=MON.filter(m=>m.req<=P.slayer && (goal!=="specific"||m.name!==P.target));
+  if(pool.length<2) return ["None","None"];
+  if(goal==="specific"){
+    const r=pool.slice().sort((a,b)=>worstT(b)-worstT(a));   // avoid the longest non-target slogs
+    return [r[0].name, r[1].name];
+  }
+  const saved=P.blocks.slice();
+  const pickNext=chosen=>{
+    const cands=pool.filter(m=>!chosen.includes(m.name)).map(m=>{ P.blocks=[...chosen,m.name]; return {name:m.name,H:benchmark(goal).H,t:worstT(m)}; });
+    const maxH=Math.max(...cands.map(c=>c.H));
+    const near=cands.filter(c=>c.H>=maxH*0.9996).sort((a,b)=>b.t-a.t);  // within 0.04% of best -> longest task wins
+    return near[0].name;
+  };
+  const b1=pickNext([]);
+  const b2=pickNext([b1]);
+  P.blocks=saved;
+  // present slower/higher-level slog first for familiarity (e.g. Venators, Hydras)
+  const pair=[byName[b1],byName[b2]].sort((a,b)=>a.req-b.req).map(m=>m.name);
+  return pair;
+}
+
+// ============ UI BUILD ============
+function el(id){return document.getElementById(id);}
+function monOptions(includeNone, placeholder){ return (placeholder?'<option value="">— select monster —</option>':'')+(includeNone?'<option value="None">None</option>':'')+MON.map(m=>`<option value="${m.name}">${m.name} (rq ${m.req})</option>`).join(''); }
+
+function buildStaticSelects(){
+  el("block1").innerHTML=monOptions(true); el("block2").innerHTML=monOptions(true);
+  el("target").innerHTML=MON.map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
+  el("block1").value="Venators"; el("block2").value="Hydras"; el("target").value="Hydras";
+}
+
+const optState=[ {name:"",amount:"",modType:"none",modVal:""},
+                 {name:"",amount:"",modType:"none",modVal:""},
+                 {name:"",amount:"",modType:"none",modVal:""} ];
+const MODTYPES=[["superior","Superior unique %"],["xp","Slayer XP %"],["quantity","Quantity (+kills)"],["clue","Clue %"],["points","Slayer points"],["none","None"]];
+
+function buildOptionInputs(){
+  const n=P.n; const box=el("optionInputs"); box.innerHTML="";
+  for(let i=0;i<n;i++){
+    const s=optState[i]||{name:"",amount:"",modType:"none",modVal:""};
+    const div=document.createElement("div"); div.className="opt";
+    div.innerHTML=`<label>Option ${i+1}</label>
+      <div class="r"><div><select class="oName" data-i="${i}">${monOptions(false,true)}</select></div>
+      <div><input type="number" class="oAmt" data-i="${i}" placeholder="amount" value="${s.amount}"></div></div>
+      <div class="r"><div><select class="oMod" data-i="${i}">${MODTYPES.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join('')}</select></div>
+      <div><input type="number" class="oVal" data-i="${i}" placeholder="value" value="${s.modVal}"></div></div>
+      <div class="metrics small" id="om${i}"></div>`;
+    box.appendChild(div);
+    div.querySelector(".oName").value=s.name; div.querySelector(".oMod").value=s.modType;
+  }
+  box.querySelectorAll("select,input").forEach(x=>x.addEventListener("input",(e)=>{
+    if(e.target.classList.contains("oName")){ const i=e.target.dataset.i, amtEl=box.querySelector(`.oAmt[data-i='${i}']`), m=byName[e.target.value]; if(m && !amtEl.value) amtEl.value=Math.round((m.aMin+m.aMax)/2); }
+    syncOptState(); recompute();
+  }));
+}
+function syncOptState(){
+  document.querySelectorAll(".oName").forEach((sel,i)=>{
+    optState[i]={name:sel.value,
+      amount:+document.querySelector(`.oAmt[data-i='${i}']`).value||0,
+      modType:document.querySelector(`.oMod[data-i='${i}']`).value,
+      modVal:+document.querySelector(`.oVal[data-i='${i}']`).value||0};
+  });
+}
+
+// ============ RECOMMENDATION ============
+function recompute(){
+  readProfile();
+  const goal=P.goal;
+  const bench=benchmark(goal);
+  const H=bench.H;
+  // display benchmark
+  if(goal==="specific"){
+    el("benchShow").textContent = bench.pTarget>0 ? (bench.expAssign).toFixed(1)+" assigns/target" : (bench.tooHigh ? `needs Slayer ${byName[P.target].req}` : "target blocked");
+    el("benchRate").textContent = bench.pTarget>0 ? (bench.pTarget*100).toFixed(0)+"% per assignment" : "";
+  } else if(goal==="unique"){
+    el("benchShow").textContent = H>0 ? (1/H).toFixed(0)+" hrs/heart" : "–";
+    el("benchRate").textContent = H>0 ? H.toFixed(4)+" ♥/hr" : "";
+  } else if(goal==="points"){
+    el("benchShow").textContent = H>0 ? Math.round(H).toLocaleString()+" pts/hr" : "–";
+    el("benchRate").textContent = "typical best-of-choices";
+  } else {
+    el("benchShow").textContent = H>0 ? Math.round(H).toLocaleString()+" xp/hr" : "–";
+    el("benchRate").textContent = "";
+  }
+  if(bench.cape && bench.capeBoost>0.0005 && goal!=="specific"){
+    el("benchRate").textContent += (el("benchRate").textContent?" · ":"") + `+${(bench.capeBoost*100).toFixed(1)}% from cape`;
+  }
+
+  syncOptState();
+  for(let i=0;i<P.n;i++){ const b=el("om"+i); if(b) b.innerHTML=""; }   // clear metrics; only filled options get them
+  const raw=optState.slice(0,P.n).map((s,i)=>({s,i,m:byName[s.name]})).filter(r=>r.m);
+  if(raw.length===0){
+    el("verdict").innerHTML=`<h2>★ Recommendation</h2><div class="pick" style="font-size:1.05rem">Pick your tasks to get a recommendation.</div><p>Upload or paste a screenshot of Mortimer's task-choice window above, or choose each offered monster and its modifier in the option boxes. I'll then tell you which to take, the right bracelet, and whether rerolling would serve you better.</p>`;
+    el("scoreTable").innerHTML=`<p class="small">Select your offered tasks above to see them scored here.</p>`;
+    renderRef(); updateSummaries(); return;
+  }
+  const results=raw.map(({s,i,m})=>{
+    const amt=+s.amount||Math.round((m.aMin+m.aMax)/2); const mod={type:s.modType,val:+s.modVal||0};
+    if(goal==="specific"){
+      const isT=s.name===P.target;
+      const e=evalOption("unique",m,amt,mod,0); // for length/speed
+      return {i,s,m,isT,rate:isT?1:0,rushTime:(amt*rushFactor())/kphOf(m)+P.overhead, ...e};
+    }
+    const e=evalOption(goal,m,amt,mod,H);
+    return {i,s,m,...e};
+  });
+
+  let best;
+  if(goal==="specific"){
+    const hit=results.filter(r=>r.isT);
+    best = hit.length ? hit.reduce((a,b)=>b.m.kph>a.m.kph?b:a) : results.reduce((a,b)=>b.rushTime<a.rushTime?b:a);
+  } else {
+    best=results.reduce((a,b)=>b.value>a.value?b:a);
+  }
+  renderScoreTable(goal,results,best,H);
+  renderVerdict(goal,results,best,H,bench);
+  renderOptMetrics(goal,results,best,H);
+  renderRef();
+  updateSummaries();
+}
+
+function renderOptMetrics(goal,results,best,H){
+  results.forEach(r=>{
+    const box=el("om"+r.i); if(!box)return;
+    if(goal==="specific"){
+      box.innerHTML = r.isT?`<b style="color:var(--cp-success)">✔ target monster</b>`:`<span class="small">not target · rush ${fmtT(r.rushTime)}</span>`;
+    } else if(goal==="points"){
+      const ratio=H>0?(r.rate/H):0;
+      box.innerHTML = r.expected>0
+        ? `<span class="mono">+${r.expected} pts</span> · <span class="mono">${Math.round(r.rate)} pts/hr</span> · <span class="mono">${ratio.toFixed(2)}×avg</span> · <span class="rec expeditious">Expeditious</span>${r.m.single?' <span class="badge single">single-way</span>':''}`
+        : `<span class="small">no points modifier — 0 pts · rush ${fmtT(r.killTime)} to move on</span>`;
+    } else {
+      const unit=goal==="unique"?"♥/hr":"xp/hr";
+      const val=goal==="unique"?r.rate.toFixed(4):Math.round(r.rate).toLocaleString();
+      const ratio=H>0?(r.rate/H):0;
+      box.innerHTML=`<span class="mono">${val} ${unit}</span> · <span class="mono">${ratio.toFixed(2)}×avg</span> · <span class="rec ${r.bracelet.toLowerCase()}">${r.bracelet}</span>${r.m.single?' <span class="badge single">single-way</span>':''}`;
+    }
+  });
+}
+
+function renderScoreTable(goal,results,best,H){
+  let head,rows;
+  if(goal==="specific"){
+    head=`<tr><th>Option</th><th>Target?</th><th>KPH</th><th>Rush time</th><th>Combat</th></tr>`;
+    rows=results.map(r=>`<tr class="${r===best?'best':''}"><td>${r.s.name}${r===best?' <span class="badge win">PICK</span>':''}</td><td>${r.isT?'✔':'—'}</td><td class="mono">${Math.round(kphOf(r.m))}</td><td class="mono">${fmtT(r.rushTime)}</td><td>${r.m.single?'single-way':'multi'}</td></tr>`).join('');
+  } else if(goal==="points"){
+    head=`<tr><th>Option</th><th>Combat</th><th>Points</th><th>Pts/hr</th><th>vs avg</th><th>Bracelet</th><th>Length</th></tr>`;
+    rows=results.map(r=>{ const ratio=H>0?r.rate/H:0;
+      return `<tr class="${r===best?'best':''}"><td style="text-align:left">${r.s.name}${r===best?' <span class="badge win">PICK</span>':''}</td><td>${r.m.single?'<span class="badge single">single</span>':'<span class="badge multi">multi</span>'}</td><td class="mono">${r.expected>0?'+'+r.expected:'—'}</td><td class="mono">${Math.round(r.rate)}</td><td class="mono">${ratio.toFixed(2)}× ${ratio>=1?'▲':'▼'}</td><td class="rec expeditious">Expeditious</td><td class="mono">${fmtT(r.killTime)}</td></tr>`;}).join('');
+  } else {
+    const unit=goal==="unique"?"Hearts/hr":"XP/hr";
+    const per=goal==="unique"?"Hrs/heart":"—";
+    head=`<tr><th>Option</th><th>Combat</th><th>${unit}</th><th>${goal==="unique"?"Hrs/heart":"vs avg"}</th><th>vs avg</th><th>Bracelet</th><th>Length</th><th>E[${goal==="unique"?"♥":"xp"}]</th></tr>`;
+    rows=results.map(r=>{ const ratio=H>0?r.rate/H:0; const rateTxt=goal==="unique"?r.rate.toFixed(4):Math.round(r.rate).toLocaleString();
+      const col4=goal==="unique"?(1/r.rate).toFixed(0):ratio.toFixed(2)+"×";
+      return `<tr class="${r===best?'best':''}"><td style="text-align:left">${r.s.name}${r===best?' <span class="badge win">PICK</span>':''}</td><td>${r.m.single?'<span class="badge single">single</span>':'<span class="badge multi">multi</span>'}</td><td class="mono">${rateTxt}</td><td class="mono">${col4}</td><td class="mono">${ratio.toFixed(2)}× ${ratio>=1?'▲':'▼'}</td><td class="rec ${r.bracelet.toLowerCase()}">${r.bracelet}</td><td class="mono">${fmtT(r.killTime)}</td><td class="mono">${goal==="unique"?r.expected.toFixed(3):Math.round(r.expected).toLocaleString()}</td></tr>`;}).join('');
+  }
+  el("scoreTable").innerHTML=`<table>${head}${rows}</table>`;
+}
+
+function renderVerdict(goal,results,best,H,bench){
+  let headline,reason,braceletLine="";
+  if(goal==="points"){
+    const ratio=H>0?best.rate/H:0;
+    if(best.expected>0){
+      const good=ratio>=1;
+      headline=`Take <b>${best.s.name}</b> — <b>+${best.expected} Slayer points</b>.`;
+      reason=`Best mix of points and speed on offer: <b>${Math.round(best.rate)} pts/hr</b> (${ratio.toFixed(2)}× your average). Points pay out once on completion, so <b>rush it with an Expeditious bracelet</b> (~${fmtT(best.killTime)}) — finishing faster clears more point-tasks per hour.` + (good?` This beats a typical fresh set, so just take it.`:` It's a touch under a typical fresh set, but it still banks points and gets you to the next choice quickly.`);
+      braceletLine=braceletRec("Expeditious");
+    } else {
+      const anyPoints=results.some(r=>r.expected>0);
+      if(anyPoints){
+        const ptsOpt=results.filter(r=>r.expected>0).sort((a,b)=>b.rate-a.rate)[0];
+        headline=`Points task is too slow — rush <b>${best.s.name}</b> to move on.`;
+        reason=`The only points on offer (<b>${ptsOpt.s.name} +${ptsOpt.expected}</b>, ${Math.round(ptsOpt.rate)} pts/hr) come too slowly to commit to. You'll bank more over time by rushing the fastest task (<b>${best.s.name}</b>, ~${fmtT(best.killTime)}) with an Expeditious bracelet and taking a fresh set of ${P.n} choices. For points, a quick task beats a big number on a slow one.`;
+      } else {
+        const pNext=bench.atomThreshold?bench.atomThreshold(0):0;
+        headline=`No points on offer — rush <b>${best.s.name}</b> to move on.`;
+        reason=`None of these carry the Slayer-point modifier, so none award points. Skipping Mortimer costs <b>100 points</b> (never worth it), so complete the fastest option (~${fmtT(best.killTime)}) with an Expeditious bracelet to reach a fresh set of ${P.n} choices — about <b>${(pNext*100).toFixed(0)}%</b> of assignments offer at least one points task.`;
+      }
+      braceletLine=braceletRec("Expeditious");
+    }
+  } else if(goal==="specific"){
+    if(best.isT){
+      headline=`Take <b>${best.s.name}</b> — it's your target.`;
+      reason=`It's one of your offered tasks, so take it and <b>extend with Bracelet of Slaughter</b> to farm as many ${best.s.name.toLowerCase()} as possible before rerolling.`;
+      braceletLine=braceletRec("Slaughter");
+    } else {
+      headline=`No ${P.target} offered — rush <b>${best.s.name}</b> with an Expeditious bracelet.`;
+      const p=bench.pTarget||0;
+      reason=`None of these are your target. Burn the fastest option (~${fmtT(best.rushTime)}) to reroll. A fresh assignment has about a <b>${(p*100).toFixed(0)}% chance</b> of offering ${P.target} (≈${bench.expAssign?bench.expAssign.toFixed(1):'∞'} assignments on average), so rerolling is the way in.`;
+      braceletLine=braceletRec("Expeditious");
+    }
+  } else {
+    const ratio=H>0?best.rate/H:0;
+    const unit=goal==="unique"?"hearts/hr":"xp/hr";
+    const pretty=goal==="unique"?best.rate.toFixed(4):Math.round(best.rate).toLocaleString();
+    const avgPretty=goal==="unique"?H.toFixed(4):Math.round(H).toLocaleString();
+    if(best.bracelet==="Slaughter"){
+      headline=`Commit to <b>${best.s.name}</b> and extend it (Bracelet of Slaughter).`;
+      reason=`It runs at <b>${ratio.toFixed(2)}× your average</b> (${pretty} vs ${avgPretty} ${unit}). Since it beats a fresh reroll, every extra kill is worth more than a new assignment — extend to bank more before paying task overhead again.`;
+      braceletLine=braceletRec("Slaughter");
+    } else {
+      const pNext = bench.atomThreshold ? bench.atomThreshold(best.rate) : 0;
+      headline=`Weak draw — rush <b>${best.s.name}</b> with an Expeditious bracelet to reroll.`;
+      reason=`The best option here (${pretty} ${unit}) is only <b>${ratio.toFixed(2)}× your average</b>. Don't invest: rush it (~${fmtT(best.killTime)}) to get a fresh set of ${P.n} options. About <b>${(pNext*100).toFixed(0)}%</b> of new assignments offer a better task than this one${best.m.single?' — and this one is single-way, so throughput is poor regardless':''}.`;
+      braceletLine=braceletRec("Expeditious");
+    }
+  }
+  let capeLine="";
+  if(P.cape){
+    let repeat, why;
+    if(goal==="specific"){
+      repeat = !!best.isT;
+      why = repeat ? `it's your target monster — lock it in` : `you'd rather reroll toward ${P.target}`;
+    } else {
+      const ratio=H>0?best.rate/H:0;
+      repeat = ratio>=1;
+      why = repeat ? `it's above your average (${ratio.toFixed(2)}×), so redoing it immediately beats a fresh roll`
+                   : `it's below your average (${ratio.toFixed(2)}×), so a fresh set of choices will do better`;
+    }
+    capeLine=`<p class="caperepeat ${repeat?'yes':'no'}">🔁 <b>Cape repeat:</b> if Mortimer offers to repeat this task (10% chance), <b>${repeat?'take it':'decline & reroll'}</b> — ${why}.</p>`;
+  }
+  el("verdict").innerHTML=`<h2>★ Recommendation</h2><div class="pick">${headline}</div><p>${reason}</p>${braceletLine}${capeLine}`;
+}
+function braceletRec(which){
+  const owns = which==="Slaughter"?P.ownSlaughter:P.ownExped;
+  if(owns) return `<p class="chip" style="display:inline-block">Bracelet: <b class="rec ${which.toLowerCase()}">${which}</b></p>`;
+  return `<p style="color:var(--cp-warning)">⚠ Recommended bracelet is <b>${which}</b>, but you haven't marked it as owned — grab one for full efficiency.</p>`;
+}
+
+function fmtT(h){ const m=h*60; return m<60?`${m.toFixed(0)} min`:`${h.toFixed(1)} hr`; }
+
+function renderRef(){
+  const rows=MON.map(m=>{ const bl=P.blocks.includes(m.name); const boosted=P.cannon&&m.cannonable; const custom=kphOverride[m.name]!=null;
+    return `<tr class="${bl?'':''}" style="${bl?'opacity:.45':''}"><td>${m.name}${custom?' <span class="badge win" title="your saved rate">yours</span>':''}</td><td class="mono">${m.req}</td><td class="small" style="text-align:left">${m.method}${m.cannonable?` <span class="badge multi" title="cannon/burst/barrage rate applies">AoE</span>`:''}</td><td class="mono">${Math.round(heartRate(m,0)*1000)/1000}</td><td class="mono">${Math.round(xpRate(m,0)).toLocaleString()}</td><td class="mono">${Math.round(pointsHrEst(m))}</td><td><input type="number" class="kphIn" data-n="${m.name}" value="${baseKph(m)}" title="${custom?'Your saved rate — double-click to reset to default':'Method default — edit to your real rate (saves automatically)'}" style="width:76px;padding:4px 6px${custom?';border-color:var(--gold)':''}">${boosted?' 🎯':''}</td><td>${m.single?'<span class="badge single">1-way</span>':'multi'}</td></tr>`;
+  }).join('');
+  const nCustom=Object.keys(kphOverride).filter(k=>byName[k]).length;
+  el("refTable").innerHTML=`<div class="refbar"><span class="small">✎ Your KPH edits <b>save on this device</b>${nCustom?` — <b class="mono">${nCustom}</b> custom rate${nCustom>1?'s':''} set`:''}. Dial in your real per-task rates once; they persist. Double-click a value to reset that one.</span><span class="refbtns"><button class="btn ghost" id="kphExport" title="Download your rates as JSON">Export</button><button class="btn ghost" id="kphImport" title="Load rates from a JSON file">Import</button><button class="btn ghost" id="kphReset" title="Clear all custom rates">Reset all</button></span></div><table><tr><th>Monster</th><th>Req</th><th style="text-align:left">Method</th><th>♥/hr</th><th>XP/hr</th><th>Pts/hr*</th><th>KPH</th><th>Combat</th></tr>${rows}</table><input type="file" id="kphFile" accept="application/json,.json" style="display:none"><p class="hint">Method &amp; cannonable flags are from the <a href="https://oldschool.runescape.wiki/w/Slayer_task" target="_blank">OSRS Wiki</a> strategy pages (authoritative), as is Slayer-XP/kill. <b>Default KPH is a method-tagged estimate</b> (🎯 = your cannon/burst/barrage rate applies) — the Wiki doesn't publish per-monster XP/hr and no clean crowdsourced set exists, so <b>your own observed rate is the best source</b>. Edits override the estimate and are saved locally. * Pts/hr assumes an estimated points modifier and is rushed.</p>`;
+  el("refTable").querySelectorAll(".kphIn").forEach(inp=>{
+    inp.addEventListener("input",()=>{ const v=+inp.value; if(v>0){ kphOverride[inp.dataset.n]=v; } else { delete kphOverride[inp.dataset.n]; } saveKph(); recompute(); });
+    inp.addEventListener("dblclick",()=>{ delete kphOverride[inp.dataset.n]; saveKph(); recompute(); });
+  });
+  el("kphExport").addEventListener("click",exportKph);
+  el("kphImport").addEventListener("click",()=>el("kphFile").click());
+  el("kphFile").addEventListener("change",importKph);
+  el("kphReset").addEventListener("click",()=>{ if(confirm("Reset all KPH values to method defaults? Your saved rates will be cleared.")){ for(const k in kphOverride) delete kphOverride[k]; saveKph(); recompute(); } });
+}
+function exportKph(){
+  const out={}; for(const k in kphOverride) if(byName[k]) out[k]=kphOverride[k];
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="mortimer-kph.json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function importKph(e){
+  const f=e.target.files&&e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const o=JSON.parse(r.result); let n=0; for(const k in o){ if(byName[k]&&+o[k]>0){ kphOverride[k]=+o[k]; n++; } } saveKph(); recompute(); alert("Imported "+n+" custom KPH rate"+(n===1?"":"s")+"."); }catch(err){ alert("Couldn't read that file — expected JSON like {'Smoke devils':300}. "+err.message); } };
+  r.readAsText(f); e.target.value="";
+}
+
+// ============ ICON MATCHING (validated pure-JS pipeline; refs pre-seeded from wiki) ============
+const ICON_REFS_RAW = {"Aberrant spectres":{"a":"e0f0613fd3fc2fd2698f99f18e11f90f1021","c":[90,82,71,56,51,45,14,20,8,19,28,10,18,26,10,48,45,38,79,72,63,90,82,71,13,19,7,53,76,28,101,145,52,106,151,54,106,151,54,98,140,50,22,31,12,90,82,71,14,21,8,92,131,48,102,146,53,101,144,52,104,147,52,106,152,55,93,133,47,19,25,12,13,19,7,88,126,45,58,82,29,100,148,44,88,127,39,98,140,50,51,72,26,51,46,40,51,46,40,35,50,18,66,94,33,102,146,52,108,154,55,48,69,25,38,54,19,51,46,40,51,46,40,35,50,18,53,76,26,78,114,35,102,150,44,49,70,25,37,52,18,51,46,40,14,19,8,37,53,19,78,111,39,93,132,47,91,131,47,62,88,32,36,52,18,51,46,40,15,22,8,41,58,21,64,92,33,71,101,36,78,111,40,54,77,27,34,49,18,51,46,40]},"Abyssal demons":{"a":"fcffcff4fe1f8e1e506050611c41e4aa7ff7","c":[90,82,71,90,82,71,90,82,71,81,74,64,65,45,29,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,102,75,53,35,33,33,90,82,71,90,82,71,90,82,71,90,82,71,39,36,32,33,30,30,56,20,16,28,20,14,90,82,71,90,82,71,90,82,71,76,70,60,58,53,46,29,17,7,67,63,63,53,49,49,41,39,39,44,37,33,6,5,6,54,51,51,61,47,37,43,41,41,36,34,34,85,48,15,93,51,14,41,31,26,73,67,58,64,60,60,0,0,1,59,54,54,119,79,45,71,56,46,28,25,26,51,46,40,7,6,7,60,51,48,90,82,71,8,4,2,66,62,62,29,28,28,43,41,41,88,80,69,113,60,14,57,49,41,90,82,71,90,82,71,90,82,71,90,82,71,123,66,14,90,82,71,90,82,71]},"Aquanites":{"a":"d7fc1fc1fd9fa23bc3b97dc3dc3bc38080a7","c":[90,82,71,90,82,71,34,61,63,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,0,0,1,45,41,36,45,41,36,0,0,1,90,82,71,90,82,71,90,82,71,90,82,71,28,35,34,72,78,64,75,84,67,27,33,33,90,82,71,90,82,71,90,82,71,90,82,71,59,75,74,130,141,112,100,107,86,61,84,83,45,41,36,0,0,1,90,82,71,90,82,71,93,136,138,127,136,109,79,86,67,65,85,79,21,32,33,90,82,71,90,82,71,90,82,71,45,41,36,163,172,137,125,132,105,32,37,30,60,67,53,90,82,71,90,82,71,90,82,71,90,101,80,110,118,94,64,67,54,23,28,22,0,0,1,0,0,1,45,41,36,50,56,44,40,45,36,45,41,36,45,41,36,60,67,53,32,35,29,45,41,36,90,82,71]},"Araxytes":{"a":"f3ffff9f71f11e526344e09a31d79f637fff","c":[79,71,59,78,69,58,79,71,59,63,30,11,25,22,19,76,68,57,77,69,58,79,71,59,79,71,59,4,4,5,78,69,58,156,76,26,140,68,23,26,12,3,78,69,58,79,71,59,42,38,39,29,41,40,78,69,58,176,94,47,110,53,19,21,9,2,30,27,27,79,71,59,43,39,40,75,68,67,48,44,44,173,93,46,91,44,15,65,59,59,79,71,59,24,22,19,41,37,37,58,52,52,7,7,7,60,54,54,13,12,12,53,48,48,63,57,57,44,40,40,38,34,34,79,71,59,29,26,23,37,4,3,44,40,34,80,73,72,77,69,57,30,28,28,12,11,12,79,71,59,38,35,35,58,52,52,78,69,58,0,0,1,79,71,59,78,69,58,78,69,58,78,69,58,78,69,58,76,68,57,78,69,58,79,71,59,79,71,59,77,69,58]},"Banshees":{"a":"ff3fdbfcbf19c706600e0fd0fe0ff0ff0ffd","c":[90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,30,27,24,68,62,54,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,23,21,19,93,86,86,5,5,5,90,82,71,90,82,71,90,82,71,27,24,22,6,5,5,72,65,58,107,97,85,31,28,22,27,24,22,120,112,111,87,81,79,56,51,44,59,53,47,86,78,68,49,44,39,32,30,24,16,16,14,69,63,55,16,16,10,83,76,66,58,53,48,67,61,56,67,61,53,36,34,29,16,16,14,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,72,66,57,38,35,29,16,16,14,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,40,36,32,40,37,29,23,21,19,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,26,23,20,23,21,19]},"Basilisks":{"a":"f87f73ef3de19e0fc0b829838011131b9ff3","c":[90,82,71,90,82,71,90,82,71,97,65,44,72,48,33,33,37,25,90,82,71,90,82,71,90,82,71,90,82,71,21,24,20,113,76,53,91,61,42,58,61,41,15,17,13,90,82,71,90,82,71,30,33,26,67,82,55,109,73,50,90,61,42,39,57,39,27,42,27,63,57,50,68,62,54,45,67,45,55,81,55,103,68,47,36,53,35,33,50,33,42,64,42,10,14,11,90,82,71,50,74,51,51,77,53,44,67,44,34,52,34,41,61,41,21,32,21,15,23,16,51,46,40,31,47,31,48,60,44,48,72,49,12,18,10,39,57,39,28,41,28,90,82,71,50,74,50,19,30,19,90,82,71,39,59,39,85,78,67,21,24,20,12,17,13,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,21,20,18,14,19,14,90,82,71]},"Bloodvelds":{"a":"fb7f73ef1fe1fe1ff1bb7fb7e92628867e63","c":[90,82,71,89,80,70,87,79,69,59,41,36,115,82,70,82,58,49,90,82,71,89,80,70,89,80,70,89,80,70,92,65,56,150,105,90,124,87,75,92,64,55,48,33,29,89,80,70,89,80,70,89,80,70,172,121,104,151,105,91,118,83,71,66,45,40,65,46,39,0,0,1,89,80,70,185,131,113,186,133,116,163,114,98,139,97,84,74,51,45,87,60,52,0,0,1,89,80,70,182,128,109,126,102,92,70,52,45,145,101,87,109,77,65,134,94,82,5,3,3,90,82,71,107,76,65,143,104,86,61,51,45,122,86,73,120,84,72,89,80,70,0,0,1,142,111,97,87,79,69,93,37,34,92,68,55,90,82,71,137,96,82,61,55,48,62,56,49,87,79,69,89,80,70,90,36,33,90,82,71,90,82,71,106,88,79,51,46,40,89,80,70]},"Cave crawlers":{"a":"ff1fb1fe3ee4bcdfcdf25e2366f67f6ff1ff","c":[79,71,59,77,68,57,78,69,58,78,69,58,79,71,59,0,0,1,65,62,47,79,71,59,78,69,58,78,69,58,78,69,58,120,113,89,79,78,59,68,68,51,37,35,27,78,69,58,76,68,57,0,0,1,136,126,101,90,90,67,71,71,53,46,46,34,89,83,66,0,0,1,70,63,53,107,100,80,97,96,72,76,76,56,60,60,44,82,75,60,62,59,46,79,71,59,116,110,87,122,112,90,72,71,53,58,54,43,90,84,67,25,22,19,92,87,68,79,71,59,128,128,95,92,92,69,58,57,43,70,65,52,108,103,81,0,0,1,79,71,59,79,71,59,127,126,94,83,83,61,76,73,57,77,68,57,0,0,1,78,69,58,79,71,59,78,69,58,0,0,1,70,67,53,78,69,58,78,69,58,78,69,58,78,69,58,79,71,59,78,69,58]},"Cave horrors":{"a":"ffffe3fffe03c03801801800b41e67f67f9f","c":[191,114,23,89,80,70,89,80,70,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,255,152,31,255,152,31,255,152,31,255,152,31,255,152,31,255,152,31,255,152,31,255,152,31,90,82,71,90,82,71,47,47,43,51,50,47,47,47,43,46,46,42,24,23,21,90,81,71,89,80,70,49,49,46,36,36,32,63,63,57,36,36,32,45,45,40,36,36,31,89,80,70,90,82,71,98,98,89,105,105,96,53,52,48,49,49,46,39,39,35,35,34,31,89,80,70,90,82,71,17,17,16,43,43,39,39,39,35,145,141,111,37,37,33,15,15,14,0,0,1,90,82,71,88,79,69,0,0,1,82,82,74,79,79,72,26,26,25,89,80,70,90,82,71,87,79,69,89,80,70,89,80,70,32,31,29,41,40,37,90,82,71,90,82,71,89,80,70]},"Cockatrice":{"a":"f3ff1fc538495e506cff6feff87f33e63ecf","c":[90,82,71,90,82,71,86,78,68,72,50,16,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,46,33,11,82,80,29,86,78,68,90,82,71,69,63,55,90,82,71,80,73,63,110,59,27,92,59,23,69,58,26,63,58,50,91,59,22,82,59,20,80,73,63,118,58,30,143,71,36,131,66,33,115,108,38,73,52,19,73,67,58,68,62,54,28,20,7,90,82,71,90,82,71,73,67,58,125,123,46,128,117,46,22,20,16,90,82,71,90,82,71,90,82,71,90,82,71,73,67,58,11,10,6,28,28,11,25,23,18,90,82,71,90,82,71,90,82,71,90,82,71,86,78,68,6,5,5,90,82,71,47,45,13,35,29,20,90,82,71,90,82,71,83,76,66,24,23,14,90,82,71,73,72,27,57,52,44,90,82,71,90,82,71]},"Crawling hands":{"a":"f87f63ff9bc5f8572573bd1ad1851da5fb5f","c":[90,82,71,90,82,71,89,80,70,0,0,1,66,73,66,52,58,52,90,82,71,89,80,70,90,82,71,90,82,71,90,99,90,79,87,79,72,79,72,69,77,69,0,0,1,89,80,70,89,80,70,91,100,91,83,90,83,78,86,78,52,58,52,49,55,49,67,75,67,89,80,70,26,29,27,95,105,96,99,110,99,51,56,51,48,53,48,49,55,49,86,95,86,89,80,70,113,124,113,79,87,79,103,113,103,89,80,70,49,55,49,89,80,70,101,112,101,43,47,43,110,123,111,40,44,40,106,116,106,89,80,70,48,53,48,90,82,71,96,105,96,32,36,32,68,62,54,6,6,6,60,81,60,89,80,70,38,42,38,89,80,70,87,79,69,90,82,71,90,82,71,89,80,70,12,16,13,90,82,71,0,0,1,89,80,70,89,80,70,90,82,71]},"Custodian stalkers":{"a":"cdfc9f0c60f0071e18c3df799fb7fb7fd7fd","c":[90,82,71,53,49,43,19,13,13,65,59,51,36,25,24,90,82,71,90,82,71,90,82,71,23,16,15,8,8,8,49,34,33,90,82,71,52,36,35,59,54,47,90,82,71,48,44,38,50,33,32,0,0,1,37,32,29,90,82,71,90,82,71,20,13,14,33,23,23,31,21,21,90,82,71,53,49,43,66,46,45,10,7,8,39,36,32,90,82,71,68,47,45,48,44,38,90,82,71,53,49,43,45,41,36,30,30,33,124,73,70,110,65,62,79,46,45,90,82,71,90,82,71,45,41,36,54,47,43,100,92,92,110,95,87,124,110,103,38,37,39,90,82,71,6,5,5,119,101,81,130,110,87,135,117,108,97,83,65,118,105,85,65,56,52,90,82,71,60,52,41,89,77,60,134,114,90,142,123,113,99,85,67,114,98,80,86,82,68,90,82,71]},"Dark beasts":{"a":"7ff7ff7bf7ff78f70370f73779f7ff7ff000","c":[132,126,118,133,127,119,133,127,119,133,127,119,255,152,31,131,125,118,132,126,118,132,126,118,131,125,118,132,126,118,133,127,119,41,39,37,217,144,59,42,40,37,133,127,119,131,125,118,132,126,118,133,127,119,131,125,118,132,126,118,133,127,119,133,127,119,132,126,118,132,126,118,133,127,119,132,126,118,132,126,118,23,17,8,64,44,29,19,13,5,132,126,118,133,127,119,133,127,119,133,127,119,132,126,118,32,23,12,86,60,40,36,22,22,132,126,118,133,127,119,132,126,118,133,127,119,133,127,119,133,127,119,133,127,119,131,125,118,132,126,118,132,126,118,131,125,118,132,126,118,133,127,119,132,126,118,133,127,119,133,127,119,133,127,119,132,126,118,78,69,58,79,71,59,76,68,57,78,69,58,79,71,59,79,71,59,78,69,58,79,70,59]},"Drakes":{"a":"bdf3df3cf3cf1cf807c03e01e00e10c03f01","c":[90,82,71,89,80,70,87,79,69,89,80,70,24,23,23,90,81,71,90,82,71,90,81,71,36,32,32,89,80,70,89,80,70,89,80,70,31,28,28,89,80,70,90,82,71,89,80,70,20,19,19,9,8,9,89,80,70,90,82,71,24,23,23,50,45,40,89,80,70,88,79,69,89,80,70,34,31,31,32,29,29,23,21,19,31,27,27,42,38,38,87,79,69,89,80,70,89,80,70,0,0,1,23,22,22,26,25,25,42,38,38,48,44,44,82,74,65,89,81,70,89,80,70,87,79,69,23,30,31,31,42,43,38,51,52,38,51,52,42,38,38,28,26,23,89,80,70,89,80,70,25,32,34,17,28,28,12,20,20,116,44,39,9,14,14,28,25,23,87,79,69,89,80,70,0,0,1,12,20,20,12,20,20,10,15,15,12,20,20,89,80,70]},"Dust devils":{"a":"0400e03981680600600603f87f87fa508000","c":[89,80,70,89,80,70,90,82,71,168,130,85,97,65,26,90,82,71,90,82,71,90,82,71,89,80,70,0,0,1,213,145,88,44,40,40,116,72,31,216,152,100,0,0,1,90,82,71,89,80,70,89,80,70,0,0,1,132,116,75,66,53,18,0,0,1,89,80,70,90,82,71,87,79,69,87,79,69,87,79,69,197,170,124,138,102,37,87,79,69,89,80,70,89,80,70,89,80,70,89,80,70,235,195,138,228,175,95,195,139,52,102,71,27,56,50,44,89,80,70,87,79,69,226,146,78,231,166,113,227,152,89,209,130,62,140,85,36,87,52,22,89,80,70,175,115,65,129,85,47,157,103,58,178,116,65,145,94,53,195,128,72,190,125,71,103,68,38,58,53,46,148,112,71,62,47,30,74,67,59,90,82,71,138,105,67,134,102,64,6,5,5]},"Gargoyles":{"a":"3ff0bf3b05dd071041f09e4ff47f8ffeffff","c":[83,84,92,0,0,1,79,71,59,79,71,59,79,71,59,78,69,58,76,68,57,78,69,58,48,48,53,50,50,56,7,7,9,69,69,76,79,71,59,71,63,53,35,35,39,75,75,83,26,26,29,56,56,62,94,94,103,125,114,113,66,67,73,100,100,111,47,47,51,79,71,59,50,50,54,7,7,8,50,50,56,86,78,78,49,49,55,57,57,63,49,49,55,78,69,58,76,68,57,78,69,58,66,66,73,52,52,58,54,54,60,59,59,65,0,0,1,26,26,28,76,68,57,78,70,58,32,31,34,54,54,60,40,40,44,37,37,41,79,71,59,79,71,59,79,71,59,79,71,59,77,68,57,5,4,5,60,60,66,79,71,59,79,71,59,78,69,58,79,71,59,79,71,59,78,69,58,105,106,116,47,47,50,78,69,58,79,71,59,78,69,58]},"Gryphons":{"a":"0001f07f07f03f07302080783f03f07f87f8","c":[90,82,71,90,82,71,48,45,41,166,153,132,134,124,106,27,25,23,77,70,61,90,82,71,43,37,34,192,174,161,192,179,158,172,159,137,139,128,110,116,107,91,58,54,46,90,82,71,20,16,16,202,186,175,197,186,167,150,139,119,135,126,108,106,90,84,53,45,43,56,51,44,73,62,59,213,205,192,146,110,19,45,36,22,130,120,102,87,73,68,73,62,58,7,6,6,90,82,71,183,126,90,122,54,12,108,73,9,119,89,12,122,112,97,84,78,67,22,20,18,90,82,71,87,38,9,176,155,115,159,141,108,139,129,111,114,106,91,33,30,26,90,82,71,86,78,68,199,188,170,189,176,154,172,159,137,149,137,118,115,106,91,76,70,60,86,78,68,39,38,36,203,192,175,194,181,161,179,165,142,158,145,125,131,121,104,98,91,78,58,53,46]},"Hydras":{"a":"f9ff5fe3cd54d8dbee7c070f63fc7f9ff7ff","c":[90,82,71,90,82,71,90,82,71,3,4,5,73,67,58,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,46,67,68,55,80,56,90,82,71,90,82,71,89,81,70,12,17,18,90,82,71,64,58,50,41,73,75,91,108,26,53,50,44,45,46,43,62,91,90,62,56,49,90,82,71,91,122,136,84,123,125,69,101,103,59,87,88,62,86,71,95,111,28,51,46,40,48,49,48,92,131,137,89,125,131,66,88,97,53,72,79,21,30,31,51,46,40,51,46,40,37,39,47,93,109,124,59,73,87,29,50,51,62,56,49,90,82,71,90,82,71,90,82,71,111,117,139,38,57,62,44,43,38,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,60,63,76,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71]},"Infernal mages":{"a":"f6ffff2ae670000000000060080108108000","c":[255,152,31,255,152,31,143,86,17,128,81,26,96,57,12,0,0,0,241,144,29,255,152,31,78,69,58,255,152,31,78,69,58,78,69,58,78,69,58,78,69,58,79,71,59,78,69,58,79,71,59,78,69,58,78,69,58,78,69,58,207,124,25,79,71,59,77,69,58,78,69,58,79,71,59,78,69,58,78,69,58,49,44,37,49,44,37,79,71,59,76,68,57,79,71,59,79,71,59,78,69,58,78,69,58,26,26,13,27,27,12,79,71,59,78,69,58,78,69,58,76,68,57,78,69,58,65,65,39,75,75,45,49,49,30,68,67,40,33,32,20,79,71,59,78,69,58,79,71,59,110,97,40,73,73,35,60,59,28,12,12,5,10,9,8,78,69,58,78,69,58,79,71,59,78,69,28,78,77,37,62,61,28,0,0,1,46,40,15,78,69,58]},"Jellies":{"a":"fdf9fa5fe7a180180180180184000100bf8f","c":[79,70,59,78,69,58,29,33,30,50,56,51,50,54,50,0,0,1,76,68,57,79,70,59,54,49,41,48,53,48,49,53,49,49,55,50,52,57,52,54,61,54,50,55,50,16,18,17,43,48,43,48,53,48,48,53,48,48,52,48,46,51,46,45,50,45,45,50,45,79,71,59,52,47,40,45,50,45,44,49,44,44,49,44,45,50,45,45,49,45,45,50,45,78,69,58,76,68,57,43,48,43,43,48,43,43,47,43,44,48,44,43,48,43,43,48,43,79,71,59,78,69,58,41,46,41,45,49,45,48,53,48,45,51,45,43,48,43,41,45,41,54,49,41,14,16,15,43,48,44,47,51,47,46,50,46,44,49,45,44,48,44,45,49,45,78,69,58,78,69,58,78,69,58,78,69,58,0,0,1,45,51,46,49,53,49,79,71,59,78,69,58]},"Kurask":{"a":"e7fae780780380780d08908108018008ff87","c":[6,6,5,0,0,1,26,31,8,55,66,17,0,0,1,90,82,71,90,82,71,90,82,71,90,82,71,13,15,0,25,30,0,95,92,57,23,34,0,32,37,0,9,10,1,90,82,71,84,77,67,13,15,0,14,17,0,19,27,0,13,15,0,27,32,0,72,65,57,90,82,71,89,80,70,13,15,0,44,50,3,12,15,0,13,15,0,41,47,2,42,58,3,90,82,71,1,1,1,15,15,0,43,43,1,49,44,39,15,15,0,46,45,2,37,43,0,89,80,70,1,1,1,16,16,0,28,25,23,72,65,57,15,15,0,39,38,0,34,34,0,28,28,0,15,15,0,15,15,0,89,81,70,51,46,40,15,15,0,10,10,0,27,27,0,2,2,1,90,82,71,89,80,70,88,79,69,7,7,1,15,15,0,11,11,1,90,82,71,87,79,69]},"Nechryael":{"a":"0400407fc7fe4664640f40b40900b0090338","c":[90,82,71,90,82,71,90,82,71,101,99,97,32,32,31,90,82,71,90,82,71,90,82,71,76,69,60,124,109,101,202,164,143,203,165,145,160,127,109,104,82,70,26,22,21,76,69,60,96,83,79,127,108,102,75,65,60,189,164,153,180,156,144,157,137,126,179,152,142,56,48,45,98,87,82,75,65,60,45,41,36,186,151,149,131,106,104,0,0,1,186,162,150,52,45,42,87,79,69,34,27,27,98,87,82,155,135,123,148,128,118,53,46,43,68,54,54,45,41,36,90,82,71,90,82,71,87,74,70,70,60,56,90,77,72,60,51,49,82,74,64,90,82,71,90,82,71,90,82,71,83,67,67,72,58,58,152,123,121,70,56,56,45,41,36,90,82,71,90,82,71,66,57,53,141,119,112,73,62,58,113,94,90,83,70,66,43,37,35,90,82,71]},"Pyrefiends":{"a":"7ff7d77ff79f79f7df7bf7cf7d77ef7ff000","c":[89,80,70,89,80,70,90,82,71,89,80,70,90,82,71,90,82,71,255,152,31,89,80,70,90,82,71,90,82,71,255,152,31,89,80,70,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,89,80,70,89,80,70,90,82,71,89,80,70,89,80,70,90,82,71,90,82,71,89,80,70,89,80,70,90,82,71,90,82,71,89,80,70,90,82,71,89,80,70,90,82,71,90,82,71,90,82,71,24,13,2,87,79,69,90,82,71,89,80,70,89,80,70,89,80,70,90,82,71,71,25,5,0,0,1,90,82,71,90,82,71,89,80,70,90,82,71,90,82,71,87,79,69,89,80,70,34,12,0,90,82,71,90,82,71,90,82,71,71,68,63,71,68,63,74,70,64,70,67,61,75,72,66,81,78,72,70,67,61,70,67,61]},"Rockslugs":{"a":"fbff1fc07f03147dc09c0d83f8ffcfd8ff0f","c":[89,80,70,89,80,70,89,80,70,0,0,1,89,80,70,90,82,71,90,82,71,89,80,70,89,80,70,0,0,1,30,28,23,79,73,59,72,65,57,12,10,5,89,80,70,89,80,70,89,80,70,0,0,1,82,75,61,79,73,59,48,44,36,52,48,38,82,74,65,89,80,70,0,0,1,53,47,31,91,85,68,87,81,64,57,53,42,28,25,17,19,18,11,20,19,12,89,80,70,68,26,17,142,104,37,76,71,57,72,53,19,46,42,34,46,42,34,90,82,71,89,80,70,145,108,39,68,64,51,60,55,44,63,46,16,0,0,1,89,80,70,90,82,71,87,79,69,107,42,28,107,97,54,59,68,51,78,58,20,90,82,71,89,80,70,89,81,70,89,80,70,89,80,70,89,80,70,0,0,1,51,19,13,90,82,71,90,82,71,89,80,70]},"Smoke devils":{"a":"ffff5ff1ff77f57fbffe7d43e07c01292fa7","c":[255,152,31,6,5,4,89,80,70,90,82,71,90,82,71,162,113,54,90,82,71,90,82,71,255,152,31,255,152,31,255,152,31,255,152,31,255,152,31,255,152,31,255,152,31,255,152,31,90,82,71,89,80,70,38,35,31,102,109,137,88,94,117,73,71,37,90,82,71,90,82,71,89,80,70,89,80,70,89,80,70,90,82,71,69,77,94,89,80,70,90,82,71,89,80,70,89,80,70,89,80,70,39,35,31,234,167,39,241,188,97,68,73,75,89,80,70,87,79,69,89,80,70,89,80,70,42,46,46,65,71,70,64,70,69,62,67,65,87,79,69,89,80,70,89,80,70,40,47,35,29,33,24,29,35,25,34,39,29,9,9,8,46,54,40,89,80,70,87,79,69,89,80,70,39,35,31,125,112,92,108,97,81,107,96,80,90,82,71,90,82,71]},"Turoth":{"a":"f9ffc7fc7bd3bdbcc3debccbddb4f3ff8fff","c":[87,79,69,89,80,70,89,80,70,66,43,41,49,30,30,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,163,101,98,137,86,84,59,36,35,46,28,28,90,82,71,90,82,71,90,82,71,139,94,92,166,103,100,136,85,83,100,62,60,92,57,55,60,55,48,89,80,70,89,80,70,44,27,26,233,230,230,176,158,157,74,55,54,96,60,58,23,21,19,89,80,70,89,80,70,44,27,27,154,140,140,177,166,165,90,82,71,84,64,63,49,30,30,89,80,70,90,82,71,9,6,6,90,82,71,125,116,116,29,21,22,175,164,163,57,35,34,89,80,70,99,75,74,115,87,86,0,0,1,89,80,70,90,82,71,0,0,1,22,20,18,90,82,71,90,82,71,89,80,70,89,80,70,90,82,71,90,82,71,90,82,71,110,85,84,90,82,71]},"Venators":{"a":"f9fe81c41760f60f78939fabdabf9bf87fff","c":[90,82,71,90,82,71,87,79,69,13,13,18,0,0,1,90,82,71,90,82,71,89,80,70,89,80,70,89,80,70,31,32,43,81,90,109,35,35,47,34,34,46,41,45,56,87,79,69,73,81,98,84,92,112,43,43,58,126,64,60,83,91,110,43,43,58,50,31,34,36,40,48,87,95,116,88,96,118,26,26,36,76,84,102,74,82,99,66,73,89,29,32,40,43,47,58,90,82,71,42,42,57,81,89,108,51,51,68,70,77,93,87,95,116,13,14,19,90,82,71,90,82,71,44,41,39,67,74,90,36,36,48,75,83,101,75,83,101,13,14,15,90,82,71,90,82,71,88,80,70,89,80,70,17,17,23,30,31,41,106,87,83,89,80,70,90,82,71,87,79,69,89,80,70,89,80,70,90,82,71,90,82,71,3,3,5,90,82,71,89,80,70]},"Warped creatures":{"a":"0000fc1fe39a7dc7f8798788600744760000","c":[90,82,71,90,82,71,90,82,71,37,40,40,100,107,107,62,56,49,62,56,49,90,82,71,90,82,71,58,53,46,124,133,133,134,144,144,125,134,135,148,158,155,182,181,152,79,72,63,79,72,62,124,130,131,127,137,137,110,118,118,132,123,132,139,139,129,121,108,110,143,138,115,31,33,34,137,139,143,115,123,124,121,130,130,117,109,117,122,125,116,63,57,50,90,82,71,110,118,118,129,139,140,123,132,132,33,36,37,14,13,15,126,135,136,56,51,45,90,82,71,50,45,38,183,170,140,36,39,40,134,113,75,90,82,71,49,49,46,41,39,42,90,82,71,22,19,16,169,151,129,141,130,139,148,131,100,99,90,66,0,0,1,44,41,45,90,82,71,60,55,47,161,144,109,87,80,63,98,89,66,34,31,24,72,66,57,90,82,71,90,82,71]},"Wyrms":{"a":"27f11f89fc0fe0ff17f7be3efadff3fe9fe1","c":[8,7,7,75,69,60,16,15,15,56,51,45,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,38,38,68,74,67,59,8,7,8,55,50,44,90,82,71,90,82,71,90,82,71,90,82,71,39,36,32,41,41,74,55,50,44,32,31,49,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,58,53,46,41,41,74,66,66,82,6,5,5,90,82,71,90,82,71,90,82,71,90,82,71,58,53,46,14,14,19,46,100,113,87,87,108,39,36,38,84,76,66,90,82,71,90,82,71,90,82,71,19,18,26,41,140,150,157,184,186,74,76,92,17,16,18,90,82,71,90,82,71,90,82,71,90,82,71,82,75,65,9,78,81,59,72,72,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,90,82,71,52,90,103,53,100,114,90,82,71]}};
+const ICON_REFS = Object.entries(ICON_REFS_RAW).map(([n,d])=>({name:n,a:BigInt("0x"+d.a),c:d.c}));
+function _px(img,x,y){const i=(y*img.w+x)*4,d=img.data;return [d[i],d[i+1],d[i+2]];}
+function _crop(img,cx,cy,cw,ch){const out=new Uint8ClampedArray(cw*ch*4);for(let y=0;y<ch;y++){for(let x=0;x<cw;x++){const s=((cy+y)*img.w+(cx+x))*4,e=(y*cw+x)*4;out[e]=img.data[s];out[e+1]=img.data[s+1];out[e+2]=img.data[s+2];out[e+3]=255;}}return {w:cw,h:ch,data:out};}
+function _medBG(img){const rs=[],gs=[],bs=[];for(let i=0;i<img.data.length;i+=4){rs.push(img.data[i]);gs.push(img.data[i+1]);bs.push(img.data[i+2]);}const md=a=>{a.sort((p,q)=>p-q);return a[a.length>>1];};return [md(rs),md(gs),md(bs)];}
+function _samp(img,x,y,c){x=Math.min(img.w-1,Math.max(0,x));y=Math.min(img.h-1,Math.max(0,y));return img.data[(y*img.w+x)*4+c];}
+function _resize(img,nw,nh){const out=new Float64Array(nw*nh*3);for(let y=0;y<nh;y++){const fy=(y+0.5)*img.h/nh-0.5,y0=Math.floor(fy),dy=fy-y0;for(let x=0;x<nw;x++){const fx=(x+0.5)*img.w/nw-0.5,x0=Math.floor(fx),dx=fx-x0;for(let c=0;c<3;c++){const p00=_samp(img,x0,y0,c),p10=_samp(img,x0+1,y0,c),p01=_samp(img,x0,y0+1,c),p11=_samp(img,x0+1,y0+1,c);out[(y*nw+x)*3+c]=p00*(1-dx)*(1-dy)+p10*dx*(1-dy)+p01*(1-dx)*dy+p11*dx*dy;}}}return out;}
+function _blob(img,bg){const W=img.w,H=img.h,fg=new Uint8Array(W*H);for(let y=0;y<H;y++){for(let x=0;x<W;x++){const [r,g,b]=_px(img,x,y),dr=r-bg[0],dg=g-bg[1],db=b-bg[2];fg[y*W+x]=(Math.sqrt(dr*dr+dg*dg+db*db)>40)?1:0;}}const dl=new Uint8Array(W*H);for(let y=0;y<H;y++){for(let x=0;x<W;x++){let v=0;for(let j=-1;j<=1&&!v;j++){for(let i=-1;i<=1;i++){const yy=y+j,xx=x+i;if(yy>=0&&yy<H&&xx>=0&&xx<W&&fg[yy*W+xx]){v=1;break;}}}dl[y*W+x]=v;}}const lab=new Int32Array(W*H);let cur=0,bestArea=0,bb=null;const st=[];for(let i=0;i<W*H;i++){if(dl[i]&&!lab[i]){cur++;let area=0,minx=W,miny=H,maxx=-1,maxy=-1;st.length=0;st.push(i);lab[i]=cur;while(st.length){const p=st.pop(),x=p%W,y=(p/W)|0;area++;if(x<minx)minx=x;if(x>maxx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;const nb=[x>0?p-1:-1,x<W-1?p+1:-1,y>0?p-W:-1,y<H-1?p+W:-1];for(const q of nb){if(q>=0&&dl[q]&&!lab[q]){lab[q]=cur;st.push(q);}}}if(area>bestArea){bestArea=area;bb=[minx,miny,maxx,maxy];}}}if(!bb)return img;return _crop(img,bb[0],bb[1],bb[2]-bb[0]+1,bb[3]-bb[1]+1);}
+function _descr(img){const g=_resize(img,12,12),gray=new Float64Array(144);let sum=0;for(let i=0;i<144;i++){const v=0.299*g[i*3]+0.587*g[i*3+1]+0.114*g[i*3+2];gray[i]=v;sum+=v;}const mean=sum/144;let ah=0n;for(let i=0;i<144;i++)ah=(ah<<1n)|(gray[i]>mean?1n:0n);const c=_resize(img,8,8),col=new Array(192);for(let i=0;i<192;i++)col[i]=c[i];return {a:ah,c:col};}
+function _dist(q,r){let x=q.a^r.a,ham=0;while(x>0n){ham+=Number(x&1n);x>>=1n;}let s=0;for(let i=0;i<192;i++){const dd=q.c[i]-r.c[i];s+=dd*dd;}return ham/144+Math.sqrt(s)/(255*Math.sqrt(192));}
+function classifyIcon(strip){const bg=_medBG(strip);const q=_descr(_blob(strip,bg));let best=null,bd=9,second=9;for(const r of ICON_REFS){const dd=_dist(q,r);if(dd<bd){second=bd;bd=dd;best=r.name;}else if(dd<second)second=dd;}return {name:best,dist:bd,margin:second-bd};}
+
+// ============ OCR ============
+function levenshtein(a,b){const m=a.length,n=b.length;const d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);for(let j=0;j<=n;j++)d[0][j]=j;for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[m][n];}
+function normLetters(s){return (s||"").toLowerCase().replace(/[^a-z]/g,"");}
+// distinctive keywords per monster (handles orange wrapped headers; disambiguates shared words like "devil")
+const KW={
+"Crawling hands":["crawlinghand","crawling"],"Cave crawlers":["cavecrawler","crawler"],
+"Banshees":["banshee"],"Rockslugs":["rockslug"],"Cockatrice":["cockatrice"],
+"Pyrefiends":["pyrefiend"],"Basilisks":["basilisk"],"Infernal mages":["infernalmage","infernal"],
+"Bloodvelds":["bloodveld"],"Gryphons":["gryphon"],"Jellies":["jellies","jelly"],
+"Custodian stalkers":["custodian"],"Turoth":["turoth"],"Warped creatures":["warped"],
+"Cave horrors":["cavehorror"],"Aberrant spectres":["aberrant","spectre"],"Wyrms":["wyrm"],
+"Dust devils":["dustdevil","dust"],"Kurask":["kurask"],"Venators":["venator"],
+"Gargoyles":["gargoyle"],"Aquanites":["aquanite"],"Nechryael":["nechryael","nechry"],
+"Drakes":["drake"],"Abyssal demons":["abyssal"],"Dark beasts":["darkbeast","beast"],
+"Araxytes":["araxyte","arax"],"Smoke devils":["smokedevil","smoke"],"Hydras":["hydra"]};
+function matchMonsterInText(text){
+  const f=normLetters(text); let best=null,bestLen=0;
+  for(const m of MON) for(const kw of (KW[m.name]||[normLetters(m.name)])){
+    if(kw.length>=4 && f.includes(kw) && kw.length>bestLen){best=m.name;bestLen=kw.length;}
+  }
+  if(best) return best;
+  // fuzzy fallback: tolerate dropped first letter (common on wrapped/pixel headers)
+  const words=(text||"").toLowerCase().split(/[^a-z]+/).filter(w=>w.length>=4);
+  let bd=0.34,bn=null;
+  for(const w of words) for(const m of MON){
+    const N=normLetters(m.name);
+    for(const c of [N, N.slice(1)]){ if(c.length<3)continue; const d=levenshtein(w,c.slice(0,w.length)); const sc=d/Math.max(w.length,1); if(sc<bd){bd=sc;bn=m.name;} }
+  }
+  return bn;
+}
+// map common OCR letter->digit confusions (used only for number extraction)
+function digitize(s){return (s||"").replace(/[Oo]/g,"0").replace(/[Il|]/g,"1").replace(/B/g,"8").replace(/[Zz]/g,"2").replace(/[Ss]/g,"5").replace(/g/g,"9");}
+function extractNums(text){const d=digitize(text);const out=[];let m;const re=/\d{2,3}/g;while((m=re.exec(d)))out.push(+m[0]);return out;}
+function modTypeOf(text){
+  const t=(text||"").toLowerCase();
+  if(/su?p[e3]r/.test(t)) return "superior";
+  if(/p[o0][il1]nt|point/.test(t)) return "points";
+  if(/c[li1]ue|clue/.test(t)) return "clue";
+  if(/exp|\bxp\b|s[li1]ayer\s*x/.test(t)) return "xp";
+  if(/assign|k[il1]{1,2}l|to\s*(the\s*)?(amount|task)/.test(t)) return "quantity";
+  return "none";
+}
+// Amount-word-anchored parser: tolerant to garbled headers/digits. Each option is
+// [monster] · "Amount: lo to hi" · [modifier pill]; we anchor on the (reliable) word
+// "Amount", read the monster before it and the modifier after it.
+function parseOptionsFromText(raw){
+  const anRe=/am[o0c]un[t7]/gi; let m; const anchors=[];
+  while((m=anRe.exec(raw))) anchors.push({i:m.index,end:anRe.lastIndex});
+  const opts=[];
+  if(anchors.length){
+    for(let k=0;k<anchors.length && k<3;k++){
+      const prevEnd=k>0?anchors[k-1].end:0;
+      const monText=raw.substring(prevEnd,anchors[k].i);
+      const nextStart=k+1<anchors.length?anchors[k+1].i:raw.length;
+      const modText=raw.substring(anchors[k].end,nextStart);
+      const name=matchMonsterInText(monText)||matchMonsterInText(modText)||MON[0].name;
+      const md=byName[name];
+      const nums=extractNums(modText);
+      let amt=null,mi=-1;
+      for(let j=0;j<nums.length-1;j++){const lo=nums[j],hi=nums[j+1]; if(lo>=10&&lo<=300&&hi>=lo&&hi<=300&&hi-lo<=260){amt=[lo,hi];mi=j;break;}}
+      const amount=amt?Math.round((amt[0]+amt[1])/2):(md?Math.round((md.aMin+md.aMax)/2):50);
+      const type=modTypeOf(modText);
+      let val=0;
+      if(type!=="none"){
+        if(type==="superior"||type==="xp"||type==="clue"){
+          const pm=digitize(modText).match(/(\d{1,3})\s*%/);
+          if(pm) val=+pm[1]; else if(mi>=0&&nums[mi+2]!=null) val=nums[mi+2]; else if(nums.length) val=nums[nums.length-1];
+        } else { if(mi>=0&&nums[mi+2]!=null) val=nums[mi+2]; else if(nums.length) val=nums[nums.length-1]; }
+      }
+      opts.push({name,_textName:matchMonsterInText(monText)||matchMonsterInText(modText)||null,amount,modType:type,modVal:val,raw:amt?{lo:amt[0],hi:amt[1]}:null});
+    }
+    return opts;
+  }
+  // fallback: monster-line anchoring when no "Amount" word is found
+  const lines=raw.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  const anc=[]; lines.forEach((ln,idx)=>{const mn=matchMonsterInText(ln); if(mn && (!anc.length||anc[anc.length-1].name!==mn))anc.push({idx,name:mn});});
+  for(let a=0;a<anc.length && opts.length<3;a++){
+    const chunk=lines.slice(anc[a].idx, a+1<anc.length?anc[a+1].idx:lines.length).join(" ");
+    const nums=extractNums(chunk); let amt=null,mi=-1;
+    for(let j=0;j<nums.length-1;j++){const lo=nums[j],hi=nums[j+1]; if(lo>=10&&lo<=300&&hi>=lo&&hi<=300&&hi-lo<=260){amt=[lo,hi];mi=j;break;}}
+    const md=byName[anc[a].name]; const type=modTypeOf(chunk);
+    let val=0; if(type!=="none"){ if(mi>=0&&nums[mi+2]!=null)val=nums[mi+2]; else if(nums.length)val=nums[nums.length-1]; }
+    opts.push({name:anc[a].name,amount:amt?Math.round((amt[0]+amt[1])/2):(md?Math.round((md.aMin+md.aMax)/2):50),modType:type,modVal:val});
+  }
+  return opts;
+}
+// ---- OFFLINE modifier reader: badge-icon TYPE + template-matched VALUE (no OCR library) ----
+const BADGE_REFS_RAW = {"xp":{"a":"f80f98c00d7ac600b80f0c70d32c00f98f80","c":[89,80,70,89,80,70,89,80,70,190,52,37,190,52,37,45,45,45,51,51,51,51,51,51,90,82,71,166,46,33,23,23,23,40,40,40,26,26,26,23,23,23,137,35,29,26,26,26,83,76,66,3,3,4,203,190,5,94,90,2,251,241,3,200,187,5,23,23,23,23,23,23,119,33,24,26,26,26,0,0,1,197,177,4,251,241,3,164,135,3,26,26,26,190,52,37,119,33,24,26,26,26,0,0,1,221,209,4,251,241,3,49,49,49,40,40,40,190,52,37,82,74,65,3,3,4,251,241,3,71,59,2,251,241,3,46,46,46,23,23,23,23,23,23,89,80,70,166,46,33,23,23,23,40,40,40,26,26,26,23,23,23,137,35,29,26,26,26,89,80,70,90,82,71,90,82,71,190,52,37,190,52,37,45,45,45,51,51,51,51,51,51]},"assigned":{"a":"f80f98e00c6ad78178098df8dfac00d08f80","c":[78,69,58,78,69,58,79,71,59,119,33,24,119,33,24,28,28,28,32,32,32,32,32,32,78,69,58,0,0,1,0,0,1,26,26,26,26,26,26,0,0,1,166,46,33,26,26,26,78,69,58,0,0,1,0,0,1,174,137,71,200,159,79,23,19,1,23,23,23,26,26,26,119,33,24,26,26,26,19,19,20,158,124,66,114,92,58,19,19,20,40,40,40,190,52,37,119,33,24,26,26,26,200,159,79,184,146,74,158,124,66,200,159,79,26,26,26,190,52,37,72,64,54,3,3,4,158,124,66,114,92,58,158,124,66,114,92,58,23,23,23,23,23,23,78,69,58,166,46,33,23,23,23,40,40,40,26,26,26,23,23,23,137,35,29,26,26,26,79,71,59,79,71,59,76,68,57,190,52,37,190,52,37,45,45,45,51,51,51,51,51,51]},"points":{"a":"fb7f98c00c0a8301d01f09e8df2802d08f60","c":[90,82,71,89,80,70,87,79,69,119,33,24,119,33,24,28,28,28,32,32,32,32,32,32,90,82,71,11,10,10,16,4,4,26,26,26,26,26,26,16,6,7,146,40,29,26,26,26,89,80,70,0,0,1,29,29,29,18,18,19,45,45,45,178,164,17,23,23,23,26,26,26,119,33,24,26,26,26,173,173,173,255,255,255,0,0,1,45,45,45,48,48,48,190,52,37,119,33,24,26,26,26,255,255,255,130,129,129,204,204,204,115,115,115,34,34,34,190,52,37,33,30,27,26,26,26,173,173,173,255,255,255,255,255,255,255,255,255,26,26,26,0,0,1,89,80,70,190,52,37,26,26,26,42,42,42,26,26,26,26,26,26,132,34,28,26,26,26,89,80,70,87,79,69,33,30,27,149,39,31,149,39,31,32,21,20,35,35,35,35,35,35]},"superior":{"a":"f80f98e24df2c58148208c50cb2842d08f6f","c":[89,80,70,89,80,70,89,80,70,119,33,24,119,33,24,28,28,28,32,32,32,32,32,32,89,80,70,0,0,1,0,0,1,26,26,26,26,26,26,3,3,4,166,46,33,26,26,26,90,82,71,0,0,1,51,51,51,194,114,23,251,241,3,48,48,48,23,23,23,26,26,26,119,33,24,26,26,26,147,35,32,111,27,24,88,22,20,141,34,31,40,40,40,190,52,37,119,33,24,26,26,26,60,14,14,116,29,25,103,25,23,56,16,16,34,34,34,190,52,37,33,30,27,26,26,26,26,26,26,78,19,17,0,0,1,23,23,23,26,26,26,0,0,1,89,80,70,190,52,37,26,26,26,42,42,42,26,26,26,26,26,26,132,34,28,26,26,26,89,80,70,89,81,70,34,31,27,149,39,31,149,39,31,32,21,20,35,35,35,35,35,35]},"clue":{"a":"f80f98c00d8adf80f80f8df8d0ac00f98f80","c":[89,80,70,89,80,70,89,80,70,190,52,37,190,52,37,45,45,45,51,51,51,51,51,51,90,82,71,166,46,33,23,23,23,40,40,40,26,26,26,23,23,23,137,35,29,26,26,26,83,76,66,3,3,4,231,202,126,28,23,14,28,23,14,232,202,126,23,23,23,23,23,23,119,33,24,26,26,26,220,185,105,130,105,61,83,73,52,222,187,108,26,26,26,190,52,37,119,33,24,26,26,26,220,185,105,147,117,64,130,105,61,222,187,108,40,40,40,190,52,37,82,74,65,3,3,4,222,187,108,20,16,9,20,16,9,219,184,104,23,23,23,23,23,23,89,80,70,166,46,33,23,23,23,40,40,40,26,26,26,23,23,23,137,35,29,26,26,26,89,80,70,90,82,71,90,82,71,190,52,37,190,52,37,45,45,45,51,51,51,51,51,51]}};
+const BADGE_REFS = Object.entries(BADGE_REFS_RAW).map(([n,d])=>({name:n,a:BigInt("0x"+d.a),c:d.c}));
+const BADGE_TYPE = {xp:"xp",assigned:"quantity",points:"points",superior:"superior",clue:"clue"};
+function _findBadgeCenter(img,yc){const W=img.w,H=img.h,sx0=Math.round(0.20*W),sx1=Math.round(0.35*W),sy0=Math.max(0,Math.round(yc-0.08*W)),sy1=Math.min(H,Math.round(yc+0.08*W));let sx=0,sy=0,n=0;for(let y=sy0;y<sy1;y++){for(let x=sx0;x<sx1;x++){const i=(y*W+x)*4,r=img.data[i],g=img.data[i+1],b=img.data[i+2];if(r>80&&r-g>35&&r-b>35){sx+=x;sy+=y;n++;}}}if(n<10)return{cx:Math.round(0.276*W),cy:yc};return{cx:Math.round(sx/n),cy:Math.round(sy/n)};}
+function classifyBadge(img,yc){const W=img.w,side=Math.round(0.072*W),ct=_findBadgeCenter(img,yc),bx=Math.max(0,Math.round(ct.cx-side/2)),by=Math.max(0,Math.round(ct.cy-side/2)),bw=Math.min(img.w-bx,side),bh=Math.min(img.h-by,side);const q=_descr(_crop(img,bx,by,bw,bh));let best=null,bd=9,sec=9;for(const r of BADGE_REFS){const dd=_dist(q,r);if(dd<bd){sec=bd;bd=dd;best=r.name;}else if(dd<sec)sec=dd;}return{type:BADGE_TYPE[best]||"none",name:best,dist:bd,margin:sec-bd};}
+// digit/symbol templates (p12 cache font); normalized to 24px height for scale-invariant NCC
+const DIGIT_TPL_RAW = {"0":{"w":6,"h":10,"b":"001100010010100101100101100101101001101001101001010010001100"},"1":{"w":5,"h":10,"b":"00100011001010000100001000010000100001000010011111"},"2":{"w":6,"h":10,"b":"011100100010000001000001000010000100001000010000100000111111"},"3":{"w":5,"h":10,"b":"01110100010000100001011100000100001000011000101110"},"4":{"w":6,"h":10,"b":"100000100000100000100000100100100100100100111111000100000100"},"5":{"w":5,"h":10,"b":"11111100001000011100000100000100001000011000101110"},"6":{"w":6,"h":10,"b":"001100010010100000100000101100110010100001100001010010001100"},"7":{"w":5,"h":10,"b":"11111000010001000010001000010001000010001000010000"},"8":{"w":6,"h":10,"b":"001100010010100001010010001100010010100001100001010010001100"},"9":{"w":6,"h":10,"b":"011110100001100001100001010001001111000001000001000001000001"},"+":{"w":7,"h":7,"b":"0001000000100000010001111111000100000010000001000"},"%":{"w":9,"h":10,"b":"011000000100100001100100010100100100011001000000010110000101001001001001010001001000000110"}};
+function _normGlyph(g,w,h){const box=24;let minx=w,maxx=-1,miny=h,maxy=-1;for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(g[y][x]){if(x<minx)minx=x;if(x>maxx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;}const out=new Float64Array(box*box);if(maxx<0)return out;const cw=maxx-minx+1,chh=maxy-miny+1,neww=Math.max(1,Math.round(cw*box/chh)),ww=Math.min(box,neww),s=(xx,yy)=>{xx=xx<minx?minx:xx>maxx?maxx:xx;yy=yy<miny?miny:yy>maxy?maxy:yy;return g[yy][xx];};for(let y=0;y<box;y++){const sy=miny+(y+0.5)*chh/box-0.5,y0=Math.floor(sy),fy=sy-y0;for(let x=0;x<ww;x++){const sx=minx+(x+0.5)*cw/neww-0.5,x0=Math.floor(sx),fx=sx-x0;out[y*box+x]=s(x0,y0)*(1-fx)*(1-fy)+s(x0+1,y0)*fx*(1-fy)+s(x0,y0+1)*(1-fx)*fy+s(x0+1,y0+1)*fx*fy;}}return out;}
+const _TPL={};
+(function(){for(const ch in DIGIT_TPL_RAW){const t=DIGIT_TPL_RAW[ch],g=[];for(let y=0;y<t.h;y++){const row=[];for(let x=0;x<t.w;x++)row.push(t.b.charCodeAt(y*t.w+x)===49?1:0);g.push(row);}_TPL[ch]=_normGlyph(g,t.w,t.h);}})();
+function _ncc(a,b){const n=a.length;let ma=0,mb=0;for(let i=0;i<n;i++){ma+=a[i];mb+=b[i];}ma/=n;mb/=n;let num=0,da=0,db=0;for(let i=0;i<n;i++){const x=a[i]-ma,y=b[i]-mb;num+=x*y;da+=x*x;db+=y*y;}const d=Math.sqrt(da*db);return d>1e-6?num/d:0;}
+function _classifyGlyph(g,w,h){const gn=_normGlyph(g,w,h);let best=null,bs=-2;for(const ch in _TPL){const s=_ncc(gn,_TPL[ch]);if(s>bs){bs=s;best=ch;}}return{ch:best,score:bs};}
+function readPillValue(img,yc,rowH){const W=img.w,cx0=Math.round(0.31*W),cx1=Math.round(0.68*W),py0=Math.max(0,Math.round(yc-0.20*rowH)),py1=Math.min(img.h,Math.round(yc+0.20*rowH)),cw=cx1-cx0,chh=py1-py0;
+  const b=new Uint8Array(cw*chh);for(let y=0;y<chh;y++)for(let x=0;x<cw;x++){const i=((py0+y)*W+(cx0+x))*4;b[y*cw+x]=((img.data[i]+img.data[i+1]+img.data[i+2])/3>135)?1:0;}
+  let miny=chh,maxy=-1;for(let y=0;y<chh;y++){let any=0;for(let x=0;x<cw;x++)if(b[y*cw+x]){any=1;break;}if(any){if(y<miny)miny=y;if(y>maxy)maxy=y;}}
+  if(maxy<0)return{num:null,pct:false};const th=maxy-miny+1;
+  const on=new Uint8Array(cw);for(let x=0;x<cw;x++){let any=0;for(let y=miny;y<=maxy;y++)if(b[y*cw+x]){any=1;break;}on[x]=any;}
+  const segs=[];let x=0;while(x<cw){if(on[x]){let s=x;while(x<cw&&on[x])x++;segs.push([s,x]);}else x++;}
+  if(!segs.length)return{num:null,pct:false};
+  const wsorted=segs.map(s=>s[1]-s[0]).slice().sort((p,q)=>p-q),medw=wsorted[wsorted.length>>1];
+  const G=segs.map(([s,e])=>{const gw=e-s,g=[];for(let y=0;y<th;y++){const row=[];for(let xx=0;xx<gw;xx++)row.push(b[(miny+y)*cw+(s+xx)]);g.push(row);}const c=_classifyGlyph(g,gw,th);return{s,e,w:gw,ch:c.ch,score:c.score};});
+  let anchor=-1;for(let i=0;i<G.length;i++){if(G[i].ch==='+'&&G[i].score>0.6&&G[i].w>=5){anchor=i;break;}}
+  if(anchor<0)for(let i=0;i<G.length;i++){if(G[i].ch>='0'&&G[i].ch<='9'&&G[i].score>0.5){anchor=i-1;break;}}
+  // sign: the leading glyph before the digits is '+' or '-'. A minus is a thin, vertically-centred
+  // bar (small fill-height); a plus has a tall vertical stroke. Quantity ("Assigned") can be negative.
+  let neg=false;
+  if(anchor>=0){ const sg=G[anchor]; let fy0=th,fy1=-1;
+    for(let y=0;y<th;y++){ let any=0; for(let xx=sg.s;xx<sg.e;xx++) if(b[(miny+y)*cw+xx]){any=1;break;} if(any){ if(y<fy0)fy0=y; if(y>fy1)fy1=y; } }
+    const fh=fy1-fy0+1, fc=(fy0+fy1)/2;
+    if(fh>0 && fh<=0.35*th && Math.abs(fc-th/2)<0.30*th) neg=true; }
+  let num="",pct=false,prevE=null;
+  for(let i=anchor+1;i<G.length;i++){const gg=G[i];if(prevE!==null&&(gg.s-prevE)>0.55*medw)break;if(gg.ch==='%'){pct=true;break;}if(gg.ch>='0'&&gg.ch<='9'&&gg.w>=5&&gg.score>0.45){num+=gg.ch;prevE=gg.e;}else if(gg.w<5)continue;else break;}
+  return{num:num?(neg?-1:1)*parseInt(num,10):null,pct};}
+// ---- pill-based row detection: one dark modifier bar per task row (robust N, no OCR) ----
+function detectRows(img){
+  const W=img.w,H=img.h, x0=Math.floor(0.28*W),x1=Math.floor(0.72*W), rw=x1-x0;
+  const content=new Uint8Array(H);
+  for(let y=0;y<H;y++){ let dark=0; for(let x=x0;x<x1;x++){ const i=(y*W+x)*4; if((img.data[i]+img.data[i+1]+img.data[i+2])/3<55)dark++; } content[y]=(dark/rw>0.35)?1:0; }
+  for(let y=0;y<Math.floor(0.08*H);y++)content[y]=0;                 // ignore title bar
+  const centers=[]; let y=Math.floor(0.08*H);
+  while(y<H){ if(content[y]){ let s=y; while(y<H&&content[y])y++; if(y-s>H*0.03)centers.push((s+y)>>1); } else y++; }
+  return centers;
+}
+async function runOCR(file){
+  const st=el("ocrStatus");
+  st.className="status work"; st.textContent="Reading screenshot…";
+  try{
+    const url=URL.createObjectURL(file); el("preview").src=url; el("preview").style.display="block";
+    const img=new Image(); await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url;});
+    const W=img.width,H=img.height;
+    const ccv=document.createElement("canvas"); ccv.width=W; ccv.height=H; const cctx=ccv.getContext("2d"); cctx.imageSmoothingEnabled=false; cctx.drawImage(img,0,0);
+    const colorImg={w:W,h:H,data:cctx.getImageData(0,0,W,H).data};
+    const centers=detectRows(colorImg);
+    if(centers.length<2){ st.className="status err"; st.textContent="Couldn't detect the task rows — use a screenshot of just the Slayer Task Choice window, or enter tasks manually."; return; }
+    const N=Math.min(3,centers.length); const rowH=centers.length>1?Math.abs(centers[1]-centers[0]):Math.floor(H/N);
+    const stripW=Math.max(24,Math.round(W*0.20));
+    const opts=[]; let iconCount=0, valCount=0;
+    for(let i=0;i<N;i++){
+      const yc=centers[i], y0=Math.max(0,Math.round(yc-rowH*0.5)), y1=Math.min(H,Math.round(yc+rowH*0.5));
+      const strip=_crop(colorImg,0,y0,stripW,y1-y0);
+      let ic=null; try{ ic=classifyIcon(strip); }catch(e){}
+      const confident = ic && ic.dist<0.5 && ic.margin>0.04;
+      const name = ic ? ic.name : MON[0].name; if(confident) iconCount++;
+      const m=byName[name];
+      // TYPE from the modifier badge icon, VALUE from template matching — both fully offline
+      let bt={type:"none",margin:0}, rv={num:null,pct:false};
+      try{ bt=classifyBadge(colorImg,yc); }catch(e){}
+      try{ rv=readPillValue(colorImg,yc,rowH); }catch(e){}
+      let type=bt.type, val=rv.num!=null?rv.num:0;
+      if(val>300||val<-100) val=0; else val=Math.round(val/5)*5;   // Mortimer modifier values are multiples of 5 (Quantity can be negative)
+      if(rv.num!=null && type!=="none") valCount++;
+      const amount = m?Math.round((m.aMin+m.aMax)/2):50;
+      opts.push({name,amount,modType:type,modVal:val,_icon:ic,_src:confident?"icon":"icon?",_badge:bt,_valConf:rv.num!=null});
+    }
+    detectedN=N; P.n=N; lastN=N;
+    for(let i=0;i<opts.length;i++) optState[i]=opts[i];
+    buildOptionInputs(); recompute();
+    const src=opts.map(o=>`${o.name}${o._src==="icon"?" ✓":" ⚠"}`).join(", ");
+    st.className="status ok"; st.innerHTML=`Detected <b>${N}</b> tasks — ${iconCount}/${N} monsters by icon, ${valCount}/${N} modifiers auto-read ✓: ${src}.<br>Amounts come from monster data. <b>Values are auto-read — glance to confirm</b> below.`;
+  }catch(e){ st.className="status err"; st.textContent="Read failed: "+e.message+". Enter tasks manually."; }
+}
+
+// ============ WIRE UP ============
+function blockNoteFor(goal){
+  if(goal==="unique") return "Recommended for imbued-heart hunting: the slow single-way slogs (e.g. Venators, Hydras) that drag down your superior spawn rate. Tweak as you like.";
+  if(goal==="xp") return "Recommended for XP/hr: the slowest single-way tasks that tank kills/hr. Tweak as you like.";
+  if(goal==="points") return "Recommended for points/hr: the slowest tasks to finish (points are per completion, so speed wins). Tweak as you like.";
+  return "Blocking the longest non-target slogs so a forced reroll isn't a marathon. Tweak as you like.";
+}
+function applySuggestedBlocks(){ const b=suggestBlocks(); el("block1").value=b[0]; el("block2").value=b[1]; el("blockNote").textContent=blockNoteFor(P.goal); }
+function initEvents(){
+  ["eliteCA","wilderness","partner","cannon","capeWorn","ownSlaughter","ownExped","mortTasks","slayerLvl","overhead"].forEach(id=>el(id).addEventListener("input",()=>{recompute();buildOptionInputsIfNeeded();}));
+  el("goal").addEventListener("change",()=>{ P.goal=el("goal").value; el("targetWrap").style.display=P.goal==="specific"?"block":"none";
+    applySuggestedBlocks(); recompute(); });
+  el("target").addEventListener("change",()=>{applySuggestedBlocks();recompute();});
+  el("block1").addEventListener("change",recompute); el("block2").addEventListener("change",recompute);
+  el("suggestBlocks").addEventListener("click",e=>{e.preventDefault();applySuggestedBlocks();recompute();});
+  // OCR upload
+  const dz=el("dropzone"),fi=el("fileInput");
+  dz.addEventListener("click",()=>fi.click());
+  fi.addEventListener("change",e=>{if(e.target.files[0])runOCR(e.target.files[0]);});
+  dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag");});
+  dz.addEventListener("dragleave",()=>dz.classList.remove("drag"));
+  dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("drag");if(e.dataTransfer.files[0])runOCR(e.dataTransfer.files[0]);});
+  window.addEventListener("paste",e=>{const it=[...(e.clipboardData?.items||[])].find(i=>i.type.startsWith("image"));if(it)runOCR(it.getAsFile());});
+  const tb=el("themeBtn");
+  if(tb){ const setIcon=()=>tb.textContent=document.documentElement.getAttribute("data-theme")==="dark"?"🌙":"☀️";
+    setIcon();
+    tb.addEventListener("click",()=>{ const cur=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark"; document.documentElement.setAttribute("data-theme",cur); try{localStorage.setItem("mortTheme",cur);}catch(e){} setIcon(); }); }
+}
+let lastN=3;
+function buildOptionInputsIfNeeded(){ readProfile(); if(P.n!==lastN){lastN=P.n;buildOptionInputs();} }
+
+// init
+buildStaticSelects();
+readProfile();
+buildOptionInputs();
+initEvents();
+el("blockNote").textContent=blockNoteFor(P.goal);
+recompute();
+</script>
+</body>
+</html>

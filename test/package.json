@@ -1,0 +1,13 @@
+{
+  "name": "mortimer-ocr-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Regression tests for the Mortimer Slayer calculator's offline screenshot OCR pipeline.",
+  "scripts": {
+    "test": "node run.cjs"
+  },
+  "dependencies": {
+    "jsdom": "22.1.0",
+    "pngjs": "^7.0.0"
+  }
+}

@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+test/node_modules/
+
+# npm bookkeeping (test deps are installed fresh in CI)
+package-lock.json
+test/package-lock.json
+.package-lock.json
+
+# logs / os cruft
+*.log
+.DS_Store
+Thumbs.db
+
+# local build/scratch
+_site/
+*.tmp
