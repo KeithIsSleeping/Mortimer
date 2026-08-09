@@ -890,6 +890,7 @@ function _findBadgeCenter(img,yc){const W=img.w,H=img.h,sx0=Math.round(0.20*W),s
 function classifyBadge(img,yc){const W=img.w,side=Math.round(0.072*W),ct=_findBadgeCenter(img,yc),bx=Math.max(0,Math.round(ct.cx-side/2)),by=Math.max(0,Math.round(ct.cy-side/2)),bw=Math.min(img.w-bx,side),bh=Math.min(img.h-by,side);const q=_descr(_crop(img,bx,by,bw,bh));let best=null,bd=9,sec=9;for(const r of BADGE_REFS){const dd=_dist(q,r);if(dd<bd){sec=bd;bd=dd;best=r.name;}else if(dd<sec)sec=dd;}return{type:BADGE_TYPE[best]||"none",name:best,dist:bd,margin:sec-bd};}
 // digit/symbol templates (p12 cache font); normalized to 24px height for scale-invariant NCC
 const DIGIT_TPL_RAW = {"0":{"w":6,"h":10,"b":"001100010010100101100101100101101001101001101001010010001100"},"1":{"w":5,"h":10,"b":"00100011001010000100001000010000100001000010011111"},"2":{"w":6,"h":10,"b":"011100100010000001000001000010000100001000010000100000111111"},"3":{"w":5,"h":10,"b":"01110100010000100001011100000100001000011000101110"},"4":{"w":6,"h":10,"b":"100000100000100000100000100100100100100100111111000100000100"},"5":{"w":5,"h":10,"b":"11111100001000011100000100000100001000011000101110"},"6":{"w":6,"h":10,"b":"001100010010100000100000101100110010100001100001010010001100"},"7":{"w":5,"h":10,"b":"11111000010001000010001000010001000010001000010000"},"8":{"w":6,"h":10,"b":"001100010010100001010010001100010010100001100001010010001100"},"9":{"w":6,"h":10,"b":"011110100001100001100001010001001111000001000001000001000001"},"+":{"w":7,"h":7,"b":"0001000000100000010001111111000100000010000001000"},"%":{"w":9,"h":10,"b":"011000000100100001100100010100100100011001000000010110000101001001001001010001001000000110"}};
+const LETTER_TPL_RAW = {"d":{"w":6,"h":10,"b":"000011000011000011000011001111011011110011110011110011011111"},"e":{"w":6,"h":6,"b":"011110110011110011111110110000011111"},"f":{"w":6,"h":11,"b":"001110011011011000011000111100011000011000011000011000011000110000"},"g":{"w":6,"h":10,"b":"011110110011110011110011110011011111000011000011110011011110"},"h":{"w":6,"h":10,"b":"110000110000110000110000111110111011110011110011110011110011"},"i":{"w":2,"h":7,"b":"11001111111111"},"j":{"w":5,"h":11,"b":"0001100000000110001100011000110001100011110111101101110"},"k":{"w":6,"h":10,"b":"110000110000110000110000110110111100111000111100110110110011"},"l":{"w":2,"h":10,"b":"11111111111111111111"},"m":{"w":8,"h":6,"b":"011111101101101111011011110110111101101111011011"},"n":{"w":6,"h":6,"b":"111110111011110011110011110011110011"},"o":{"w":6,"h":6,"b":"011110110011110011110011110011011110"},"p":{"w":6,"h":10,"b":"011110110011110011110011110011111110110000110000110000110000"},"q":{"w":6,"h":10,"b":"001110011011110011110011011011001111000011000011000011000011"},"r":{"w":4,"h":6,"b":"111111101100110011001100"},"s":{"w":6,"h":6,"b":"011111110000011110000011000011111110"},"t":{"w":4,"h":9,"b":"110011001100111111001100110011000111"},"u":{"w":6,"h":6,"b":"110011110011110011110011110011011110"},"v":{"w":6,"h":6,"b":"110011110011011110011110001100001100"},"w":{"w":7,"h":6,"b":"110001111000111101011111111111101110100010"},"x":{"w":6,"h":6,"b":"110011011110001100011110011110110011"},"y":{"w":6,"h":10,"b":"110011110011110011110011011111000011000011000011110110011100"},"z":{"w":6,"h":6,"b":"111111000110001100011000110000111111"},"A":{"w":7,"h":10,"b":"0011100011011011000111100011111111111000111100011110001111000111100011"},"B":{"w":6,"h":10,"b":"111110110011110011110011111110110011110011110011110011111110"},"C":{"w":6,"h":10,"b":"001110011011110000110000110000110000110000110000011011001110"},"D":{"w":6,"h":10,"b":"111100110110110011110011110011110011110011110011110011111110"},"E":{"w":6,"h":10,"b":"111111110000110000110000111100110000110000110000110000111111"},"F":{"w":6,"h":10,"b":"111111110000110000110000111100110000110000110000110000110000"},"G":{"w":7,"h":10,"b":"0011110011001111000001100000110111011000111100011110001101100110011110"},"H":{"w":6,"h":10,"b":"110011110011110011110011111111110011110011110011110011110011"},"I":{"w":4,"h":10,"b":"1111011001100110011001100110011001101111"},"J":{"w":7,"h":10,"b":"1111111000110000011000001100000110000011000001100110110011011000111000"},"K":{"w":7,"h":10,"b":"1100110110110011110001110000110000011100001111000110110011001101100011"},"L":{"w":6,"h":10,"b":"110000110000110000110000110000110000110000110000110000111111"},"M":{"w":8,"h":10,"b":"11000011110000111110011111111111110110111100001111000011110000111100001111000011"},"N":{"w":7,"h":10,"b":"1100011111001111110111111011110111111011111101111110011111001111100011"},"O":{"w":7,"h":10,"b":"0011100011011011000111100011110001111000111100011110001101101100011100"},"P":{"w":6,"h":10,"b":"111100110110110011110011110110111100110000110000110000110000"},"Q":{"w":7,"h":10,"b":"0011100011011011000111100011110001111000111111011110111101101100011111"},"R":{"w":6,"h":10,"b":"111110110011110011110011110110111100111100110110110011110011"},"S":{"w":6,"h":10,"b":"001110011011110000011000001100000110000011000011110110011100"},"T":{"w":6,"h":10,"b":"111111001100001100001100001100001100001100001100001100001100"},"U":{"w":7,"h":10,"b":"1100011110001111000111100011110001111000111100011110001101101110011111"},"V":{"w":6,"h":10,"b":"110011110011110011110011110011011110011110011110001100001100"},"W":{"w":8,"h":10,"b":"11000011110000111100001111000011110110111101101111011011110110110111111000111100"},"X":{"w":6,"h":10,"b":"110011110011011110011110001100011110011110110011110011110011"},"Y":{"w":6,"h":10,"b":"110011110011110011011110001100001100001100001100001100001100"},"Z":{"w":6,"h":10,"b":"111111000011000110000110001100011000011000110000110000111111"},"a":{"w":6,"h":6,"b":"011110110011011111110011110011011111"},"b":{"w":6,"h":10,"b":"110000110000110000110000111100110110110011110011110011111110"},"c":{"w":5,"h":6,"b":"011111100011000110001100001111"}};
 function _normGlyph(g,w,h){const box=24;let minx=w,maxx=-1,miny=h,maxy=-1;for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(g[y][x]){if(x<minx)minx=x;if(x>maxx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;}const out=new Float64Array(box*box);if(maxx<0)return out;const cw=maxx-minx+1,chh=maxy-miny+1,neww=Math.max(1,Math.round(cw*box/chh)),ww=Math.min(box,neww),s=(xx,yy)=>{xx=xx<minx?minx:xx>maxx?maxx:xx;yy=yy<miny?miny:yy>maxy?maxy:yy;return g[yy][xx];};for(let y=0;y<box;y++){const sy=miny+(y+0.5)*chh/box-0.5,y0=Math.floor(sy),fy=sy-y0;for(let x=0;x<ww;x++){const sx=minx+(x+0.5)*cw/neww-0.5,x0=Math.floor(sx),fx=sx-x0;out[y*box+x]=s(x0,y0)*(1-fx)*(1-fy)+s(x0+1,y0)*fx*(1-fy)+s(x0,y0+1)*(1-fx)*fy+s(x0+1,y0+1)*fx*fy;}}return out;}
 const _TPL={};
 (function(){for(const ch in DIGIT_TPL_RAW){const t=DIGIT_TPL_RAW[ch],g=[];for(let y=0;y<t.h;y++){const row=[];for(let x=0;x<t.w;x++)row.push(t.b.charCodeAt(y*t.w+x)===49?1:0);g.push(row);}_TPL[ch]=_normGlyph(g,t.w,t.h);}})();
@@ -926,6 +927,51 @@ function detectRows(img){
   while(y<H){ if(content[y]){ let s=y; while(y<H&&content[y])y++; if(y-s>H*0.03)centers.push((s+y)>>1); } else y++; }
   return centers;
 }
+// ===== NAME-TEXT READER (b12 cache font) — fallback monster ID used only when the animated icon is uncertain =====
+const _LTPL={};
+(function(){for(const ch in LETTER_TPL_RAW){const t=LETTER_TPL_RAW[ch],g=[];for(let y=0;y<t.h;y++){const row=[];for(let x=0;x<t.w;x++)row.push(t.b.charCodeAt(y*t.w+x)===49?1:0);g.push(row);}_LTPL[ch]=_normGlyph(g,t.w,t.h);}})();
+function _classifyLetter(g,w,h){const gn=_normGlyph(g,w,h);let best=null,bs=-2;for(const ch in _LTPL){const s=_ncc(gn,_LTPL[ch]);if(s>bs){bs=s;best=ch;}}return{ch:best,score:bs};}
+function _isNameOrange(r,g,b){return (r-b)>80&&r>120&&(r-g)>22;}
+// The monster name is orange underlined-link text in the left strip. The underline fuses letters,
+// so strip near-full-width rows before segmenting. Best-effort at 12px (~3/4 accuracy), hence used
+// only to rescue an uncertain icon match, never to override a confident one.
+function readHeaderText(img,yc,rowH){
+  const W=img.w,H=img.h;
+  const cx0=Math.round(0.02*W),cx1=Math.round(0.245*W),cw=cx1-cx0;
+  const y0=Math.max(0,Math.round(yc-0.50*rowH)),y1=Math.min(H,Math.round(yc+0.45*rowH)),chh=y1-y0;
+  const b=new Uint8Array(cw*chh);
+  for(let y=0;y<chh;y++)for(let x=0;x<cw;x++){const i=((y0+y)*W+(cx0+x))*4;b[y*cw+x]=_isNameOrange(img.data[i],img.data[i+1],img.data[i+2])?1:0;}
+  const rowCount=new Array(chh).fill(0);
+  for(let y=0;y<chh;y++){let c=0;for(let x=0;x<cw;x++)c+=b[y*cw+x];rowCount[y]=c;}
+  const bands=[];let y=0;
+  while(y<chh){if(rowCount[y]>=2){let s=y;while(y<chh&&rowCount[y]>=1)y++;bands.push([s,y]);}else y++;}
+  const words=[];
+  for(const bd of bands){
+    const by0=bd[0],by1=bd[1],bh=by1-by0;if(bh<5)continue;
+    let minx=cw,maxx=-1;
+    for(let yy=by0;yy<by1;yy++)for(let x=0;x<cw;x++)if(b[yy*cw+x]){if(x<minx)minx=x;if(x>maxx)maxx=x;}
+    if(maxx<0)continue;const bw=maxx-minx+1;
+    for(let yy=by0;yy<by1;yy++){let c=0;for(let x=minx;x<=maxx;x++)if(b[yy*cw+x])c++;if(c/bw>0.58)for(let x=0;x<cw;x++)b[yy*cw+x]=0;}
+    let ly0=by1,ly1=by0;for(let yy=by0;yy<by1;yy++){let any=0;for(let x=0;x<cw;x++)if(b[yy*cw+x]){any=1;break;}if(any){if(yy<ly0)ly0=yy;if(yy>ly1)ly1=yy;}}
+    if(ly1<ly0)continue;const lh=ly1-ly0+1;if(lh<5)continue;
+    const colOn=new Array(cw).fill(0);
+    for(let x=0;x<cw;x++){let any=0;for(let yy=ly0;yy<=ly1;yy++)if(b[yy*cw+x]){any=1;break;}colOn[x]=any;}
+    const segs=[];let x=0;while(x<cw){if(colOn[x]){let s=x;while(x<cw&&colOn[x])x++;segs.push([s,x]);}else x++;}
+    if(!segs.length)continue;
+    const widths=segs.map(s=>s[1]-s[0]).slice().sort((a,c)=>a-c);const medw=widths[widths.length>>1]||6;
+    let word='',prevE=null;
+    for(const sg of segs){
+      const s=sg[0],e=sg[1];
+      if(prevE!==null&&(s-prevE)>0.9*medw)word+=' ';
+      const gw=e-s,g=[];for(let yy=ly0;yy<=ly1;yy++){const r2=[];for(let xx=s;xx<e;xx++)r2.push(b[yy*cw+xx]);g.push(r2);}
+      const c=_classifyLetter(g,gw,lh);
+      if(c.score>0.25&&gw>=2)word+=c.ch;
+      prevE=e;
+    }
+    if(word.trim())words.push(word.trim());
+  }
+  return words.join(' ');
+}
 async function runOCR(file){
   const st=el("ocrStatus");
   st.className="status work"; st.textContent="Reading screenshot…";
@@ -944,8 +990,15 @@ async function runOCR(file){
       const yc=centers[i], y0=Math.max(0,Math.round(yc-rowH*0.5)), y1=Math.min(H,Math.round(yc+rowH*0.5));
       const strip=_crop(colorImg,0,y0,stripW,y1-y0);
       let ic=null; try{ ic=classifyIcon(strip); }catch(e){}
-      const confident = ic && ic.dist<0.5 && ic.margin>0.04;
-      const name = ic ? ic.name : MON[0].name; if(confident) iconCount++;
+      const iconConfident = ic && ic.dist<0.42 && ic.margin>0.05;
+      let name = ic ? ic.name : MON[0].name;
+      // Icons are animated model renders and can appear in an unseen pose; when the icon match is
+      // uncertain, fall back to reading the (unambiguous) orange name text. Never overrides a confident icon.
+      let textName=null; try{ textName=matchMonsterInText(readHeaderText(colorImg,yc,rowH)); }catch(e){}
+      if(!iconConfident && textName) name = textName;
+      const confident = iconConfident || (textName!=null && textName===name);
+      if(confident) iconCount++;
+      const nameSrc = iconConfident ? "icon" : (textName ? "name" : "icon?");
       const m=byName[name];
       // TYPE from the modifier badge icon, VALUE from template matching — both fully offline
       let bt={type:"none",margin:0}, rv={num:null,pct:false};
@@ -955,12 +1008,12 @@ async function runOCR(file){
       if(val>300||val<-100) val=0; else val=Math.round(val/5)*5;   // Mortimer modifier values are multiples of 5 (Quantity can be negative)
       if(rv.num!=null && type!=="none") valCount++;
       const amount = m?Math.round((m.aMin+m.aMax)/2):50;
-      opts.push({name,amount,modType:type,modVal:val,_icon:ic,_src:confident?"icon":"icon?",_badge:bt,_valConf:rv.num!=null});
+      opts.push({name,amount,modType:type,modVal:val,_icon:ic,_src:nameSrc,_badge:bt,_valConf:rv.num!=null});
     }
     detectedN=N; P.n=N; lastN=N;
     for(let i=0;i<opts.length;i++) optState[i]=opts[i];
     buildOptionInputs(); recompute();
-    const src=opts.map(o=>`${o.name}${o._src==="icon"?" ✓":" ⚠"}`).join(", ");
+    const src=opts.map(o=>`${o.name}${(o._src==="icon"||o._src==="name")?" ✓":" ⚠"}${o._src==="name"?"(name)":""}`).join(", ");
     st.className="status ok"; st.innerHTML=`Detected <b>${N}</b> tasks — ${iconCount}/${N} monsters by icon, ${valCount}/${N} modifiers auto-read ✓: ${src}.<br>Amounts come from monster data. <b>Values are auto-read — glance to confirm</b> below.`;
   }catch(e){ st.className="status err"; st.textContent="Read failed: "+e.message+". Enter tasks manually."; }
 }

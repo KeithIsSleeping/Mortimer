@@ -32,7 +32,7 @@ Rates are per hour and independent of task size; task size only sets how long a 
 There is no external OCR dependency. The pipeline (`index.html`) is:
 
 1. **`detectRows`** — finds the dark task pills to count how many tasks (2 or 3) are offered.
-2. **`classifyIcon`** — matches the monster sprite against pre-computed reference descriptors (12×12 average-hash + 8×8 colour). The in-game icon can appear in a **different pose/frame between task rolls**, so each monster stores *multiple* reference poses (built from the fixtures); a match against any pose wins.
+2. **`classifyIcon`** — matches the monster sprite against pre-computed reference descriptors (12×12 average-hash + 8×8 colour). The in-game icon is a live-rendered model and can appear in a **different pose/frame between task rolls**, so each monster stores *multiple* reference poses (built from the fixtures); a match against any pose wins. If the icon match is **uncertain** (an unseen pose), the reader falls back to `readHeaderText`, which reads the orange monster-name text via embedded **b12 cache-font** letter templates and keyword-matches it — the icon is never overridden when it is confident.
 3. **`classifyBadge`** — reads the circular modifier badge to determine the modifier *type*.
 4. **`readPillValue`** — segments the pill text and template-matches digits against embedded RuneLite cache-font glyphs to read the *value* (snapped to a multiple of 5; supports negatives).
 
