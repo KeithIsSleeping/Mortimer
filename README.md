@@ -32,7 +32,7 @@ Rates are per hour and independent of task size; task size only sets how long a 
 There is no external OCR dependency. The pipeline (`index.html`) is:
 
 1. **`detectRows`** — finds the dark task pills to count how many tasks (2 or 3) are offered.
-2. **`classifyIcon`** — matches the monster sprite against pre-computed reference descriptors (12×12 average-hash + 8×8 colour).
+2. **`classifyIcon`** — matches the monster sprite against pre-computed reference descriptors (12×12 average-hash + 8×8 colour). The in-game icon can appear in a **different pose/frame between task rolls**, so each monster stores *multiple* reference poses (built from the fixtures); a match against any pose wins.
 3. **`classifyBadge`** — reads the circular modifier badge to determine the modifier *type*.
 4. **`readPillValue`** — segments the pill text and template-matches digits against embedded RuneLite cache-font glyphs to read the *value* (snapped to a multiple of 5; supports negatives).
 
@@ -54,6 +54,7 @@ The app is a single self-contained file: **`index.html`**. Open it directly in a
 index.html                 the whole app (HTML + CSS + JS, no external assets)
 test/
   run.cjs                  jsdom harness that runs the real OCR pipeline headlessly
+  rebuild-refs.cjs         folds new monster icon poses from the fixtures into index.html
   ground-truth.json        human-verified expected reads for each fixture
   fixtures/*.png           native in-game "Slayer Task Choice" screenshots
 .github/workflows/deploy.yml   runs the tests, then deploys to Pages if they pass
@@ -75,10 +76,21 @@ or any uncaught page error. **Run it after every change to the OCR code, the ref
 
 ### Adding a test fixture
 
-1. Drop a native *Slayer Task Choice* screenshot into `test/fixtures/` (e.g. `9.png`). Use a clean game
+1. Drop a native *Slayer Task Choice* screenshot into `test/fixtures/` (e.g. `16.png`). Use a clean game
    screenshot — not a screenshot of this app.
 2. Add its expected reads to `test/ground-truth.json` (verify them **by eye**, never by trusting the current reader).
 3. `npm test`.
+
+### Fixing a misidentified monster
+
+The task-choice icon for a monster isn't stable — the same monster can render in a noticeably different pose
+between task rolls, so a single stored descriptor can misfire. When the app picks the wrong monster:
+
+1. Save the native screenshot into `test/fixtures/` and add its ground truth (as above).
+2. `node rebuild-refs.cjs` — this extracts each fixture icon's descriptor with the app's own pipeline and folds
+   any **new distinct poses** into `index.html`'s `ICON_REFS_RAW` (existing poses and uncaptured monsters are
+   preserved). It's idempotent.
+3. `npm test` — confirm the new shot **and** every earlier fixture still pass.
 
 ## Deployment
 

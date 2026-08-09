@@ -55,5 +55,61 @@
       { "monster": "Infernal mages", "type": "quantity", "value": -15 },
       { "monster": "Pyrefiends", "type": "superior", "value": 90 }
     ]
+  },
+  "9.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Jellies", "type": "points", "value": 10 },
+      { "monster": "Cave crawlers", "type": "points", "value": 5 },
+      { "monster": "Bloodvelds", "type": "quantity", "value": 55 }
+    ]
+  },
+  "10.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Abyssal demons", "type": "clue", "value": 40 },
+      { "monster": "Kurask", "type": "xp", "value": 55 },
+      { "monster": "Infernal mages", "type": "superior", "value": 50 }
+    ]
+  },
+  "11.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Nechryael", "type": "xp", "value": 25 },
+      { "monster": "Gryphons", "type": "points", "value": 20 },
+      { "monster": "Bloodvelds", "type": "xp", "value": 10 }
+    ]
+  },
+  "12.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Aberrant spectres", "type": "points", "value": 20 },
+      { "monster": "Gargoyles", "type": "xp", "value": 60 },
+      { "monster": "Kurask", "type": "quantity", "value": 65 }
+    ]
+  },
+  "13.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Smoke devils", "type": "points", "value": 20 },
+      { "monster": "Custodian stalkers", "type": "xp", "value": 25 },
+      { "monster": "Warped creatures", "type": "quantity", "value": 75 }
+    ]
+  },
+  "14.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Dark beasts", "type": "points", "value": 10 },
+      { "monster": "Turoth", "type": "quantity", "value": 80 },
+      { "monster": "Wyrms", "type": "clue", "value": 120 }
+    ]
+  },
+  "15.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Dark beasts", "type": "points", "value": 10 },
+      { "monster": "Turoth", "type": "quantity", "value": 80 },
+      { "monster": "Wyrms", "type": "clue", "value": 120 }
+    ]
   }
 }
