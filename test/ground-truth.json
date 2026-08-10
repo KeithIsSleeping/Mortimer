@@ -111,5 +111,13 @@
       { "monster": "Turoth", "type": "quantity", "value": 80 },
       { "monster": "Wyrms", "type": "clue", "value": 120 }
     ]
+  },
+  "16.png": {
+    "n": 3,
+    "options": [
+      { "monster": "Banshees", "type": "points", "value": 10 },
+      { "monster": "Dust devils", "type": "xp", "value": 10 },
+      { "monster": "Dark beasts", "type": "quantity", "value": 70 }
+    ]
   }
 }
